@@ -119,7 +119,10 @@ export default function SettingsScreen({ navigation }) {
         <View style={{ flex: 1, minHeight: 40 }} />
 
         {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn}>
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={() => navigation.replace('Login')}
+        >
           <Text style={styles.logoutText}>Oturumu kapat</Text>
         </TouchableOpacity>
 

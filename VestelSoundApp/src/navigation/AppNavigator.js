@@ -6,6 +6,7 @@ import Svg, { Rect, Path, Circle } from 'react-native-svg';
 
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
 import EqualizerScreen from '../screens/EqualizerScreen';
 import LightingScreen from '../screens/LightingScreen';
@@ -88,6 +89,7 @@ export default function AppNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Main" component={MainTabs} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen

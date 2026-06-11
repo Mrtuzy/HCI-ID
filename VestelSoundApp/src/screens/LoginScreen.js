@@ -99,18 +99,14 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.spacer} />
 
           {/* Register */}
-          <TouchableOpacity style={styles.registerRow}>
+          <TouchableOpacity
+            style={styles.registerRow}
+            onPress={() => navigation.navigate('Register')}
+          >
             <Text style={styles.registerText}>Hesap oluştur</Text>
           </TouchableOpacity>
         </ScrollView>
 
-        {/* Skip */}
-        <TouchableOpacity
-          style={styles.skip}
-          onPress={() => navigation.replace('Main')}
-        >
-          <Text style={styles.skipText}>Şimdilik atla</Text>
-        </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -163,14 +159,5 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontFamily: 'Inter_500Medium',
     color: colors.primary,
-  },
-  skip: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  skipText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: colors.secondary,
   },
 });

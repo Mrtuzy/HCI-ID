@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
 
@@ -7,10 +7,18 @@ const TRACK_H = 180;
 const THUMB_SIZE = 16;
 const CONTAINER_W = 20;
 
-export default function VerticalSlider({ min = -12, max = 12, initialValue = 0, onChange }) {
+export default function VerticalSlider({ min = -12, max = 12, initialValue = 0, value: controlledValue, onChange }) {
   const [value, setValue] = useState(initialValue);
   const currentValue = useRef(initialValue);
   const startValue = useRef(initialValue);
+
+  // Sync visual position when parent changes the controlled value (preset switch)
+  useEffect(() => {
+    if (controlledValue !== undefined && controlledValue !== currentValue.current) {
+      setValue(controlledValue);
+      currentValue.current = controlledValue;
+    }
+  }, [controlledValue]);
 
   const clamp = (v) => Math.max(min, Math.min(max, v));
 

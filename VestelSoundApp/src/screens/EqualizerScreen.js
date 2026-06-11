@@ -8,7 +8,6 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 const EQ_BANDS = ['63', '125', '250', '500', '1K', '4K', '16K'];
-const INITIAL_EQ = [4, 2, 0, -2, 3, 5, 2];
 
 const PRESETS = [
   { num: '01', name: 'Bass Boost' },
@@ -17,17 +16,44 @@ const PRESETS = [
   { num: '04', name: 'Custom' },
 ];
 
+const PRESET_VALUES = {
+  '01': [9, 8, 4, 0, -2, 1, 2],    // Bass Boost: big low-end lift
+  '02': [-3, -2, 1, 5, 7, 5, 3],   // Vokal: cut bass, boost presence
+  '03': [4, 5, 4, 2, 2, 4, 5],     // Akustik: warm & airy
+};
+
 export default function EqualizerScreen({ navigation }) {
-  const [eqValues, setEqValues] = useState([...INITIAL_EQ]);
+  const [eqValues, setEqValues] = useState(new Array(7).fill(0));
   const [activePreset, setActivePreset] = useState(null);
+  const [savedCustom, setSavedCustom] = useState(new Array(7).fill(0));
+
+  const activePresetName = PRESETS.find(p => p.num === activePreset)?.name ?? 'Custom';
+
+  const selectPreset = (num) => {
+    setActivePreset(num);
+    if (num === '04') {
+      setEqValues([...savedCustom]);
+    } else {
+      setEqValues([...PRESET_VALUES[num]]);
+    }
+  };
 
   const updateBand = (i, v) => {
     const next = [...eqValues];
     next[i] = v;
     setEqValues(next);
+    setActivePreset('04'); // any manual tweak becomes Custom
   };
 
-  const reset = () => setEqValues(new Array(7).fill(0));
+  const save = () => {
+    setSavedCustom([...eqValues]);
+    setActivePreset('04');
+  };
+
+  const reset = () => {
+    setEqValues(new Array(7).fill(0));
+    setActivePreset(null);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -53,7 +79,7 @@ export default function EqualizerScreen({ navigation }) {
         {/* Section label */}
         <View style={styles.titleRow}>
           <Text style={styles.sectionLabel}>EQUALIZER</Text>
-          <Text style={styles.screenTitle}>Custom</Text>
+          <Text style={styles.screenTitle}>{activePresetName}</Text>
         </View>
 
         {/* EQ Sliders */}
@@ -61,7 +87,7 @@ export default function EqualizerScreen({ navigation }) {
           {EQ_BANDS.map((band, i) => (
             <View key={band} style={styles.bandCol}>
               <VerticalSlider
-                initialValue={INITIAL_EQ[i]}
+                value={eqValues[i]}
                 onChange={(v) => updateBand(i, v)}
               />
               <Text style={styles.bandLabel}>{band}</Text>
@@ -79,7 +105,7 @@ export default function EqualizerScreen({ navigation }) {
             <View key={p.num}>
               <TouchableOpacity
                 style={styles.presetRow}
-                onPress={() => setActivePreset(p.num)}
+                onPress={() => selectPreset(p.num)}
               >
                 <View style={styles.presetLeft}>
                   <Text style={styles.presetNum}>{p.num}</Text>
@@ -96,7 +122,7 @@ export default function EqualizerScreen({ navigation }) {
 
         {/* Action Buttons — exact Figma: r=22, h=44, w=171 */}
         <View style={styles.btnRow}>
-          <TouchableOpacity style={styles.btnFill} onPress={() => {}}>
+          <TouchableOpacity style={styles.btnFill} onPress={save}>
             <Text style={styles.btnFillText}>Kaydet</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnOutline} onPress={reset}>

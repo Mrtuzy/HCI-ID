@@ -1,10 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, PanResponder } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const SEGMENTS = 120;
 
-const hslToHex = (h, s, l) => {
+export const hslToHex = (h, s, l) => {
   h = ((h % 360) + 360) % 360;
   s /= 100; l /= 100;
   const c = (1 - Math.abs(2 * l - 1)) * s;
@@ -34,14 +34,24 @@ const arc = (cx, cy, outerR, innerR, start, end) => {
   return `M ${os.x} ${os.y} A ${outerR} ${outerR} 0 0 1 ${oe.x} ${oe.y} L ${ie.x} ${ie.y} A ${innerR} ${innerR} 0 0 0 ${is.x} ${is.y} Z`;
 };
 
-export default function ColorWheel({ size = 220, innerRatio = 0.5, onColorSelect }) {
+export default function ColorWheel({ size = 220, innerRatio = 0.5, onColorSelect, angle: controlledAngle }) {
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 4;
   const innerR = outerR * innerRatio;
 
-  const [indicatorAngle, setIndicatorAngle] = useState(30);
+  const initialAngle = controlledAngle ?? 30;
+  const [indicatorAngle, setIndicatorAngle] = useState(initialAngle);
+  const currentAngle = useRef(initialAngle);
   const segAngle = 360 / SEGMENTS;
+
+  // Sync indicator when parent changes the controlled angle (preset switch)
+  useEffect(() => {
+    if (controlledAngle !== undefined && Math.abs(controlledAngle - currentAngle.current) > 0.01) {
+      currentAngle.current = controlledAngle;
+      setIndicatorAngle(controlledAngle);
+    }
+  }, [controlledAngle]);
 
   const handleTouch = (lx, ly) => {
     const dx = lx - cx;
@@ -50,6 +60,7 @@ export default function ColorWheel({ size = 220, innerRatio = 0.5, onColorSelect
     if (dist < innerR || dist > outerR + 10) return;
     let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
+    currentAngle.current = angle;
     setIndicatorAngle(angle);
     onColorSelect && onColorSelect(hslToHex(angle, 90, 55), angle);
   };
