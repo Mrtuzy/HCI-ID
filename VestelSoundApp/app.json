@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Vestel Sound",
+    "slug": "vestel-sound-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F2EDE4"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vestel.soundapp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F2EDE4"
+      },
+      "package": "com.vestel.soundapp"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
