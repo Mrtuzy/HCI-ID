@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   SafeAreaView, ScrollView, PanResponder, Modal,
 } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import ProfileIcon from '../components/ProfileIcon';
+import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useTheme } from '../context/ThemeContext';
 
 const SONGS = [
   {
@@ -55,24 +57,17 @@ function AlbumArt({ song, size = 240 }) {
   );
 }
 
-function AIIcon() {
+function AIIcon({ color }) {
   return (
     <Svg width={14} height={15} viewBox="0 0 14 15">
-      <Path d="M12 2L10 7l5-2-5-2zM2 8l4 4-2 2H2v-2L0 10l2-2z" fill={colors.primary} />
-    </Svg>
-  );
-}
-
-function ProfileIcon() {
-  return (
-    <Svg width={22} height={22} viewBox="0 0 22 22">
-      <Circle cx={11} cy={8} r={4} fill={colors.primary} />
-      <Path d="M3 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke={colors.primary} strokeWidth={1.5} fill="none" />
+      <Path d="M12 2L10 7l5-2-5-2zM2 8l4 4-2 2H2v-2L0 10l2-2z" fill={color} />
     </Svg>
   );
 }
 
 function VolumeSlider({ value, onChange }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
   const TRACK_W = 246;
   const startValue = useRef(value);
   const currentValue = useRef(value);
@@ -93,17 +88,17 @@ function VolumeSlider({ value, onChange }) {
   return (
     <View style={vol.row}>
       <Svg width={14} height={12} viewBox="0 0 14 12" style={{ marginRight: 12 }}>
-        <Path d="M0 4h4l4-4v12l-4-4H0V4z" fill={colors.secondary} />
+        <Path d="M0 4h4l4-4v12l-4-4H0V4z" fill={C.secondary} />
       </Svg>
       <View style={vol.trackWrapper}>
-        <View style={vol.track} />
-        <View style={[vol.fill, { width: `${value}%` }]} />
-        <View style={[vol.thumb, { left: `${value}%` }]} {...pan.panHandlers} />
+        <View style={[vol.track, { backgroundColor: C.border }]} />
+        <View style={[vol.fill, { backgroundColor: C.primary, width: `${value}%` }]} />
+        <View style={[vol.thumb, { backgroundColor: C.primary, left: `${value}%` }]} {...pan.panHandlers} />
       </View>
       <Svg width={18} height={14} viewBox="0 0 18 14" style={{ marginLeft: 12 }}>
-        <Path d="M0 4h4l4-4v14l-4-4H0V4z" fill={colors.secondary} />
-        <Path d="M12 2c2.2 1.4 3 4 2 6.5" stroke={colors.secondary} strokeWidth={1.5} fill="none" />
-        <Path d="M14 0c3 2 4 6 2 10" stroke={colors.secondary} strokeWidth={1.5} fill="none" />
+        <Path d="M0 4h4l4-4v14l-4-4H0V4z" fill={C.secondary} />
+        <Path d="M12 2c2.2 1.4 3 4 2 6.5" stroke={C.secondary} strokeWidth={1.5} fill="none" />
+        <Path d="M14 0c3 2 4 6 2 10" stroke={C.secondary} strokeWidth={1.5} fill="none" />
       </Svg>
     </View>
   );
@@ -112,9 +107,9 @@ function VolumeSlider({ value, onChange }) {
 const vol = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   trackWrapper: { flex: 1, height: 20, justifyContent: 'center', position: 'relative' },
-  track: { position: 'absolute', left: 0, right: 0, height: 3, backgroundColor: colors.border, borderRadius: 1.5 },
-  fill: { position: 'absolute', left: 0, height: 3, backgroundColor: colors.primary, borderRadius: 1.5 },
-  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: colors.primary, marginLeft: -7, top: 3 },
+  track: { position: 'absolute', left: 0, right: 0, height: 3, borderRadius: 1.5 },
+  fill: { position: 'absolute', left: 0, height: 3, borderRadius: 1.5 },
+  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, marginLeft: -7, top: 3 },
 });
 
 function ProgressSlider({ value, onChange }) {
@@ -152,10 +147,14 @@ const prog = StyleSheet.create({
   wrapper: { width: '100%', paddingVertical: 10 },
   track: { height: 3, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 2, position: 'relative' },
   fill: { height: 3, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 2 },
-  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: colors.white, top: -5.5, marginLeft: -7 },
+  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFFFFF', top: -5.5, marginLeft: -7 },
 });
 
 export default function HomeScreen({ navigation }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
+  const styles = useMemo(() => makeStyles(C), [isDark]);
+
   const [volume, setVolume] = useState(75);
   const [battery] = useState(78);
   const [currentSong, setCurrentSong] = useState(0);
@@ -239,7 +238,7 @@ export default function HomeScreen({ navigation }) {
   const repeatIconColors = [
     'rgba(255,255,255,0.3)',
     'rgba(255,255,255,0.9)',
-    colors.coral,
+    '#B5562B',
   ];
 
   return (
@@ -248,9 +247,9 @@ export default function HomeScreen({ navigation }) {
 
         {/* Top Bar */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconBtn}><AIIcon /></TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Settings')}>
-            <ProfileIcon />
+          <TouchableOpacity style={styles.iconBtn}><AIIcon color={C.primary} /></TouchableOpacity>
+          <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
+            <ProfileIcon color={C.primary} size={28} />
           </TouchableOpacity>
         </View>
 
@@ -264,7 +263,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.albumRow}>
           <TouchableOpacity style={styles.arrowBtn} onPress={skipBackward}>
             <Svg width={6} height={12} viewBox="0 0 6 12">
-              <Path d="M6 0L0 6l6 6" stroke={colors.primary} strokeWidth={1.5} fill="none" />
+              <Path d="M6 0L0 6l6 6" stroke={C.primary} strokeWidth={1.5} fill="none" />
             </Svg>
           </TouchableOpacity>
 
@@ -278,7 +277,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity style={styles.arrowBtn} onPress={skipForward}>
             <Svg width={6} height={12} viewBox="0 0 6 12">
-              <Path d="M0 0l6 6-6 6" stroke={colors.primary} strokeWidth={1.5} fill="none" />
+              <Path d="M0 0l6 6-6 6" stroke={C.primary} strokeWidth={1.5} fill="none" />
             </Svg>
           </TouchableOpacity>
         </View>
@@ -295,14 +294,14 @@ export default function HomeScreen({ navigation }) {
             <Svg width={100} height={60} viewBox="0 0 100 60">
               <Path
                 d="M10 55 A40 40 0 0 1 90 55"
-                stroke={colors.border}
+                stroke={C.border}
                 strokeWidth={6}
                 fill="none"
                 strokeLinecap="round"
               />
               <Path
                 d="M10 55 A40 40 0 0 1 90 55"
-                stroke={colors.primary}
+                stroke={C.primary}
                 strokeWidth={6}
                 fill="none"
                 strokeLinecap="round"
@@ -385,24 +384,24 @@ export default function HomeScreen({ navigation }) {
                 <Ionicons
                   name="shuffle"
                   size={22}
-                  color={isShuffle ? colors.white : 'rgba(255,255,255,0.3)'}
+                  color={isShuffle ? '#FFFFFF' : 'rgba(255,255,255,0.3)'}
                 />
               </TouchableOpacity>
 
               <TouchableOpacity style={panel.controlBtn} onPress={skipBackward}>
-                <Ionicons name="play-skip-back" size={28} color={colors.white} />
+                <Ionicons name="play-skip-back" size={28} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity style={panel.playBtn} onPress={() => setIsPlaying(p => !p)}>
                 <Ionicons
                   name={isPlaying ? 'pause' : 'play'}
                   size={32}
-                  color={colors.primary}
+                  color="#1C1817"
                 />
               </TouchableOpacity>
 
               <TouchableOpacity style={panel.controlBtn} onPress={skipForward}>
-                <Ionicons name="play-skip-forward" size={28} color={colors.white} />
+                <Ionicons name="play-skip-forward" size={28} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -456,8 +455,8 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.cream },
+const makeStyles = (C) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.cream },
   content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 32 },
 
   topBar: {
@@ -465,37 +464,41 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: 20,
   },
   iconBtn: {
-    width: 28, height: 28, backgroundColor: colors.white,
+    width: 28, height: 28, backgroundColor: C.white,
     borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+  },
+  profileBtn: {
+    width: 28, height: 28,
+    justifyContent: 'center', alignItems: 'center',
   },
 
   speakerInfo: { marginBottom: 24 },
-  connectedLabel: { ...typography.labelMd, color: colors.secondary, marginBottom: 4 },
-  speakerName: { ...typography.title, color: colors.primary },
+  connectedLabel: { ...typography.labelMd, color: C.secondary, marginBottom: 4 },
+  speakerName: { ...typography.title, color: C.primary },
 
   albumRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 16,
   },
   arrowBtn: {
-    width: 20, height: 20, backgroundColor: colors.white,
+    width: 20, height: 20, backgroundColor: C.white,
     borderRadius: 10, justifyContent: 'center', alignItems: 'center',
   },
   albumArt: { width: 240, height: 240, borderRadius: 12, overflow: 'hidden' },
 
   songInfo: { alignItems: 'center', marginBottom: 28 },
-  songTitle: { ...typography.titleSm, color: colors.primary, marginBottom: 4 },
-  songArtist: { ...typography.caption, color: colors.secondary },
+  songTitle: { ...typography.titleSm, color: C.primary, marginBottom: 4 },
+  songArtist: { ...typography.caption, color: C.secondary },
 
   volumeBlock: { alignItems: 'center', gap: 20 },
   batteryCard: {
-    width: 160, backgroundColor: colors.white, borderRadius: 12,
+    width: 160, backgroundColor: C.white, borderRadius: 12,
     alignItems: 'center', paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16,
   },
   batteryValueRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: 6 },
-  knobValue: { fontFamily: 'Inter_400Regular', fontSize: 20, color: colors.primary },
-  knobUnit: { fontFamily: 'Inter_400Regular', fontSize: 11, color: colors.secondary, marginLeft: 2 },
-  batteryLabel: { ...typography.caption, color: colors.secondary, marginTop: 4 },
+  knobValue: { fontFamily: 'Inter_400Regular', fontSize: 20, color: C.primary },
+  knobUnit: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.secondary, marginLeft: 2 },
+  batteryLabel: { ...typography.caption, color: C.secondary, marginTop: 4 },
   volumeSliderRow: { width: '100%', paddingHorizontal: 4 },
 });
 
@@ -522,7 +525,7 @@ const panel = StyleSheet.create({
   trackRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   artWrapper: { borderRadius: 8, overflow: 'hidden', marginRight: 14 },
   trackMeta: { flex: 1 },
-  trackTitle: { ...typography.titleSm, color: colors.white, marginBottom: 3 },
+  trackTitle: { ...typography.titleSm, color: '#FFFFFF', marginBottom: 3 },
   trackArtist: { ...typography.caption, color: 'rgba(255,255,255,0.45)' },
 
   progressSection: { marginBottom: 20 },
@@ -536,11 +539,11 @@ const panel = StyleSheet.create({
   controlBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   playBtn: {
     width: 60, height: 60, borderRadius: 30,
-    backgroundColor: colors.white, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center',
   },
   repeatOneLabel: {
     position: 'absolute', bottom: -3, right: -3,
-    fontSize: 9, fontWeight: '700', color: colors.coral,
+    fontSize: 9, fontWeight: '700', color: '#B5562B',
   },
 
   queueLabel: { ...typography.labelMd, color: 'rgba(255,255,255,0.4)', marginBottom: 10 },
@@ -553,7 +556,7 @@ const panel = StyleSheet.create({
   songArtSmall: { borderRadius: 6, overflow: 'hidden', marginRight: 12 },
   songMeta: { flex: 1 },
   songRowTitle: { ...typography.body, color: 'rgba(255,255,255,0.55)', marginBottom: 2 },
-  songRowTitleActive: { color: colors.white, fontFamily: 'Inter_500Medium' },
+  songRowTitleActive: { color: '#FFFFFF', fontFamily: 'Inter_500Medium' },
   songRowArtist: { ...typography.caption, color: 'rgba(255,255,255,0.35)' },
   songRowDuration: { ...typography.caption, color: 'rgba(255,255,255,0.35)' },
 });

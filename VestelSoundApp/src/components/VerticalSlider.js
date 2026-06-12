@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { getColors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 
 // Exact Figma specs: 20x180 component, 2px track, 16px thumb ellipse
 const TRACK_H = 180;
@@ -8,6 +9,8 @@ const THUMB_SIZE = 16;
 const CONTAINER_W = 20;
 
 export default function VerticalSlider({ min = -12, max = 12, initialValue = 0, value: controlledValue, onChange }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
   const [value, setValue] = useState(initialValue);
   const currentValue = useRef(initialValue);
   const startValue = useRef(initialValue);
@@ -51,11 +54,11 @@ export default function VerticalSlider({ min = -12, max = 12, initialValue = 0, 
   return (
     <View style={styles.container} {...pan.panHandlers}>
       {/* Track */}
-      <View style={styles.trackBg} />
+      <View style={[styles.trackBg, { backgroundColor: C.border }]} />
       {/* Fill (below thumb) */}
-      <View style={[styles.fill, { height: Math.max(0, fillH), top: thumbTop + THUMB_SIZE }]} />
+      <View style={[styles.fill, { backgroundColor: C.primary, height: Math.max(0, fillH), top: thumbTop + THUMB_SIZE }]} />
       {/* Thumb */}
-      <View style={[styles.thumb, { top: thumbTop }]} />
+      <View style={[styles.thumb, { backgroundColor: C.primary, top: thumbTop }]} />
     </View>
   );
 }
@@ -71,14 +74,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 2,
     height: TRACK_H,
-    backgroundColor: colors.border,
     borderRadius: 1,
     left: (CONTAINER_W - 2) / 2,
   },
   fill: {
     position: 'absolute',
     width: 2,
-    backgroundColor: colors.primary,
     borderRadius: 1,
     left: (CONTAINER_W - 2) / 2,
   },
@@ -87,7 +88,6 @@ const styles = StyleSheet.create({
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     borderRadius: THUMB_SIZE / 2,
-    backgroundColor: colors.primary,
     left: (CONTAINER_W - THUMB_SIZE) / 2,
   },
 });

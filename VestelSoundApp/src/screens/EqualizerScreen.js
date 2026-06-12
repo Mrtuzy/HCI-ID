@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import VerticalSlider from '../components/VerticalSlider';
-import { colors } from '../theme/colors';
+import ProfileIcon from '../components/ProfileIcon';
+import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useTheme } from '../context/ThemeContext';
 
 const EQ_BANDS = ['63', '125', '250', '500', '1K', '4K', '16K'];
 
@@ -23,6 +25,10 @@ const PRESET_VALUES = {
 };
 
 export default function EqualizerScreen({ navigation }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
+  const styles = useMemo(() => makeStyles(C), [isDark]);
+
   const [eqValues, setEqValues] = useState(new Array(7).fill(0));
   const [activePreset, setActivePreset] = useState(null);
   const [savedCustom, setSavedCustom] = useState(new Array(7).fill(0));
@@ -62,17 +68,14 @@ export default function EqualizerScreen({ navigation }) {
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.iconBtn}>
             <Svg width={14} height={15} viewBox="0 0 14 15">
-              <Path d="M12 2L10 7l5-2-5-2zM2 8l4 4-2 2H2v-2L0 10l2-2z" fill={colors.primary} />
+              <Path d="M12 2L10 7l5-2-5-2zM2 8l4 4-2 2H2v-2L0 10l2-2z" fill={C.primary} />
             </Svg>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.iconBtn}
+            style={styles.profileBtn}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Svg width={22} height={22} viewBox="0 0 22 22">
-              <Path d="M11 2a6 6 0 110 12A6 6 0 0111 2z" fill={colors.primary} />
-              <Path d="M3 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke={colors.primary} strokeWidth={1.5} fill="none" />
-            </Svg>
+            <ProfileIcon color={C.primary} size={28} />
           </TouchableOpacity>
         </View>
 
@@ -112,7 +115,7 @@ export default function EqualizerScreen({ navigation }) {
                   <Text style={styles.presetName}>{p.name}</Text>
                 </View>
                 <Svg width={4} height={8} viewBox="0 0 4 8">
-                  <Path d="M0 0l4 4-4 4" stroke={activePreset === p.num ? colors.primary : colors.border} strokeWidth={1.5} fill="none" />
+                  <Path d="M0 0l4 4-4 4" stroke={activePreset === p.num ? C.primary : C.border} strokeWidth={1.5} fill="none" />
                 </Svg>
               </TouchableOpacity>
               {i < PRESETS.length - 1 && <View style={styles.divider} />}
@@ -134,8 +137,8 @@ export default function EqualizerScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.cream },
+const makeStyles = (C) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.cream },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 20 },
 
   topBar: {
@@ -145,8 +148,13 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     width: 28, height: 28,
-    backgroundColor: colors.white,
+    backgroundColor: C.white,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileBtn: {
+    width: 28, height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -154,12 +162,12 @@ const styles = StyleSheet.create({
   titleRow: { marginBottom: 24 },
   sectionLabel: {
     ...typography.labelMd,
-    color: colors.secondary,
+    color: C.secondary,
     marginBottom: 4,
   },
   screenTitle: {
     ...typography.title,
-    color: colors.primary,
+    color: C.primary,
   },
 
   slidersArea: {
@@ -174,13 +182,13 @@ const styles = StyleSheet.create({
   },
   bandLabel: {
     ...typography.caption,
-    color: colors.secondary,
+    color: C.secondary,
     fontSize: 10,
   },
 
   centerLine: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: C.border,
     marginHorizontal: 4,
     marginBottom: 16,
     opacity: 0.6,
@@ -189,7 +197,7 @@ const styles = StyleSheet.create({
   presetsSection: { flex: 1 },
   presetsLabel: {
     ...typography.labelMd,
-    color: colors.secondary,
+    color: C.secondary,
     marginBottom: 8,
   },
   presetRow: {
@@ -201,17 +209,17 @@ const styles = StyleSheet.create({
   presetLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   presetNum: {
     ...typography.label,
-    color: colors.secondary,
+    color: C.secondary,
     fontSize: 11,
   },
   presetName: {
     fontFamily: 'Inter_400Regular',
     fontSize: 15,
-    color: colors.primary,
+    color: C.primary,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: C.border,
   },
 
   btnRow: {
@@ -222,26 +230,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   btnFill: {
-    width: 171, height: 44,
-    backgroundColor: colors.buttonBg,
+    flex: 1, height: 44,
+    backgroundColor: C.buttonBg,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   btnFillText: {
     ...typography.btnSm,
-    color: colors.buttonText,
+    color: C.buttonText,
   },
   btnOutline: {
-    width: 171, height: 44,
+    flex: 1, height: 44,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: C.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   btnOutlineText: {
     ...typography.btnSm,
-    color: colors.primary,
+    color: C.primary,
   },
 });

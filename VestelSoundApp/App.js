@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar';
 import AppNavigator from './src/navigation/AppNavigator';
 import { colors } from './src/theme/colors';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 function Root() {
   const { isDark } = useTheme();
+
+  // Immersive: hide the Android system navigation bar (soft keys)
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-swipe');
+    }
+  }, []);
+
   return (
     <NavigationContainer>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      {/* Hide the top status bar (clock / notifications) inside the app */}
+      <StatusBar hidden />
       <AppNavigator />
     </NavigationContainer>
   );

@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   SafeAreaView, ScrollView, PanResponder,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import ColorWheel, { hslToHex } from '../components/ColorWheel';
-import { colors } from '../theme/colors';
+import ProfileIcon from '../components/ProfileIcon';
+import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useTheme } from '../context/ThemeContext';
 
 const MODES = ['Adaptive', 'Pulse', 'Rainbow', 'Static', 'Breathe'];
 
@@ -26,6 +28,8 @@ const TRACK_W = 280;
 const DEFAULTS = { colorAngle: 30, mode: 'Adaptive', brightness: 70, speed: 40 };
 
 function HSlider({ label, value: controlledValue = 50, onChange }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
   const [value, setValue] = useState(controlledValue);
   const currV = useRef(controlledValue);
   const startV = useRef(controlledValue);
@@ -51,11 +55,11 @@ function HSlider({ label, value: controlledValue = 50, onChange }) {
 
   return (
     <View style={hs.row}>
-      <Text style={hs.label}>{label}</Text>
+      <Text style={[hs.label, { color: C.secondary }]}>{label}</Text>
       <View style={hs.trackWrapper} {...pan.panHandlers}>
-        <View style={hs.track} />
-        <View style={[hs.fill, { width: `${value}%` }]} />
-        <View style={[hs.thumb, { left: `${value}%` }]} />
+        <View style={[hs.track, { backgroundColor: C.border }]} />
+        <View style={[hs.fill, { backgroundColor: C.primary, width: `${value}%` }]} />
+        <View style={[hs.thumb, { backgroundColor: C.primary, left: `${value}%` }]} />
       </View>
     </View>
   );
@@ -63,14 +67,18 @@ function HSlider({ label, value: controlledValue = 50, onChange }) {
 
 const hs = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  label: { ...typography.label, color: colors.secondary, width: 90 },
+  label: { ...typography.label, width: 90 },
   trackWrapper: { flex: 1, height: 16, justifyContent: 'center', position: 'relative' },
-  track: { position: 'absolute', left: 0, right: 0, height: 3, backgroundColor: colors.border, borderRadius: 2 },
-  fill: { position: 'absolute', left: 0, height: 3, backgroundColor: colors.primary, borderRadius: 2 },
-  thumb: { position: 'absolute', width: 16, height: 16, borderRadius: 8, backgroundColor: colors.primary, marginLeft: -8, top: 0 },
+  track: { position: 'absolute', left: 0, right: 0, height: 3, borderRadius: 2 },
+  fill: { position: 'absolute', left: 0, height: 3, borderRadius: 2 },
+  thumb: { position: 'absolute', width: 16, height: 16, borderRadius: 8, marginLeft: -8, top: 0 },
 });
 
 export default function LightingScreen({ navigation }) {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
+  const styles = useMemo(() => makeStyles(C), [isDark]);
+
   const [colorAngle, setColorAngle] = useState(DEFAULTS.colorAngle);
   const [selectedColor, setSelectedColor] = useState(hslToHex(DEFAULTS.colorAngle, 90, 55));
   const [selectedMode, setSelectedMode] = useState(DEFAULTS.mode);
@@ -123,17 +131,14 @@ export default function LightingScreen({ navigation }) {
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.iconBtn}>
             <Svg width={14} height={15} viewBox="0 0 14 15">
-              <Path d="M12 2L10 7l5-2-5-2z" fill={colors.primary} />
+              <Path d="M12 2L10 7l5-2-5-2z" fill={C.primary} />
             </Svg>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.iconBtn}
+            style={styles.profileBtn}
             onPress={() => navigation.navigate('Settings')}
           >
-            <Svg width={22} height={22} viewBox="0 0 22 22">
-              <Path d="M11 2a6 6 0 110 12A6 6 0 0111 2z" fill={colors.primary} />
-              <Path d="M3 20c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke={colors.primary} strokeWidth={1.5} fill="none" />
-            </Svg>
+            <ProfileIcon color={C.primary} size={28} />
           </TouchableOpacity>
         </View>
 
@@ -155,7 +160,7 @@ export default function LightingScreen({ navigation }) {
               setActivePreset(null);
             }}
           />
-          <View style={[styles.innerCircle, { backgroundColor: colors.cream }]} />
+          <View style={[styles.innerCircle, { backgroundColor: C.cream }]} />
           <View style={[styles.innerDot, { backgroundColor: selectedColor }]} />
         </View>
 
@@ -170,7 +175,7 @@ export default function LightingScreen({ navigation }) {
             <Svg width={8} height={4} viewBox="0 0 8 4">
               <Path
                 d={dropdownOpen ? 'M0 4L4 0l4 4' : 'M0 0l4 4 4-4'}
-                stroke={colors.secondary}
+                stroke={C.secondary}
                 strokeWidth={1.5}
                 fill="none"
               />
@@ -231,7 +236,7 @@ export default function LightingScreen({ navigation }) {
                   <Svg width={4} height={8} viewBox="0 0 4 8">
                     <Path
                       d="M0 0l4 4-4 4"
-                      stroke={isActive ? colors.primary : colors.border}
+                      stroke={isActive ? C.primary : C.border}
                       strokeWidth={1.5}
                       fill="none"
                     />
@@ -258,19 +263,23 @@ export default function LightingScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.cream },
+const makeStyles = (C) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: C.cream },
   content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 32 },
 
   topBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   iconBtn: {
-    width: 28, height: 28, backgroundColor: colors.white,
+    width: 28, height: 28, backgroundColor: C.white,
     borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+  },
+  profileBtn: {
+    width: 28, height: 28,
+    justifyContent: 'center', alignItems: 'center',
   },
 
   titleRow: { marginBottom: 20 },
-  sectionLabel: { ...typography.labelMd, color: colors.secondary, marginBottom: 4 },
-  screenTitle: { ...typography.title, color: colors.primary },
+  sectionLabel: { ...typography.labelMd, color: C.secondary, marginBottom: 4 },
+  screenTitle: { ...typography.title, color: C.primary },
 
   wheelContainer: {
     alignSelf: 'center',
@@ -291,48 +300,48 @@ const styles = StyleSheet.create({
     width: 18, height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    borderColor: colors.white,
+    borderColor: C.white,
   },
 
   section: { marginBottom: 20 },
 
   dropdown: {
-    height: 32, borderRadius: 15, borderWidth: 1, borderColor: colors.border,
+    height: 32, borderRadius: 15, borderWidth: 1, borderColor: C.border,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  dropdownText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.primary },
+  dropdownText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: C.primary },
   dropdownMenu: {
-    marginTop: 4, borderRadius: 4, backgroundColor: colors.cream,
-    borderWidth: 1, borderColor: colors.border, overflow: 'hidden',
+    marginTop: 4, borderRadius: 4, backgroundColor: C.cream,
+    borderWidth: 1, borderColor: C.border, overflow: 'hidden',
   },
   dropdownItem: { height: 32, justifyContent: 'center', paddingHorizontal: 16 },
-  dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  dropdownItemText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.primary },
+  dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
+  dropdownItemText: { fontFamily: 'Inter_400Regular', fontSize: 15, color: C.primary },
 
   presetRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 14, paddingHorizontal: 4, borderRadius: 8,
   },
-  presetRowActive: { backgroundColor: 'rgba(28,24,23,0.05)' },
+  presetRowActive: { backgroundColor: C.cardActive },
   presetLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   presetDot: { width: 10, height: 10, borderRadius: 5 },
-  presetDotEmpty: { backgroundColor: colors.border },
-  presetNum: { ...typography.label, color: colors.secondary, fontSize: 11 },
-  presetName: { fontFamily: 'Inter_400Regular', fontSize: 15, color: colors.primary },
+  presetDotEmpty: { backgroundColor: C.border },
+  presetNum: { ...typography.label, color: C.secondary, fontSize: 11 },
+  presetName: { fontFamily: 'Inter_400Regular', fontSize: 15, color: C.primary },
   textDim: { opacity: 0.4 },
-  divider: { height: 1, backgroundColor: colors.border },
+  divider: { height: 1, backgroundColor: C.border },
 
   btnRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 8 },
   btnFill: {
-    flex: 1, height: 44, backgroundColor: colors.buttonBg,
+    flex: 1, height: 44, backgroundColor: C.buttonBg,
     borderRadius: 22, justifyContent: 'center', alignItems: 'center',
   },
-  btnFillText: { ...typography.btnSm, color: colors.buttonText },
+  btnFillText: { ...typography.btnSm, color: C.buttonText },
   btnOutline: {
     flex: 1, height: 44, borderRadius: 22,
-    borderWidth: 1, borderColor: colors.border,
+    borderWidth: 1, borderColor: C.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  btnOutlineText: { ...typography.btnSm, color: colors.primary },
+  btnOutlineText: { ...typography.btnSm, color: C.primary },
 });

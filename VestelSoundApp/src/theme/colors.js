@@ -11,6 +11,7 @@ export const colors = {
   textSecondary: '#6E665C',
   buttonBg: '#1C1817',
   buttonText: '#F2EDE4',
+  cardActive: 'rgba(28,24,23,0.05)',
 };
 
 const darkColors = {
@@ -26,6 +27,7 @@ const darkColors = {
   textSecondary: '#8A8076',
   buttonBg: '#F2EDE4',
   buttonText: '#1C1817',
+  cardActive: 'rgba(255,255,255,0.07)',
 };
 
 export function getColors(isDark) {
