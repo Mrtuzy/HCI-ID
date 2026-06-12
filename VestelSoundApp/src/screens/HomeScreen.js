@@ -6,6 +6,7 @@ import {
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileIcon from '../components/ProfileIcon';
+import WatchModal from './WatchScreen';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { useTheme, useI18n } from '../context/ThemeContext';
@@ -53,6 +54,21 @@ function AlbumArt({ song, size = 240 }) {
       <Circle cx={cx} cy={cy} r={r * 0.34} stroke={song.accentColor} strokeWidth={0.7} fill="none" opacity={0.35} />
       <Circle cx={cx} cy={cy} r={r * 0.22} fill={song.accentColor} opacity={0.65} />
       <Circle cx={cx} cy={cy} r={r * 0.08} fill={song.accentColor} />
+    </Svg>
+  );
+}
+
+function WatchIcon({ color }) {
+  return (
+    <Svg width={13} height={18} viewBox="0 0 13 18">
+      {/* top strap */}
+      <Rect x={3} y={0.5} width={7} height={4} rx={1.5} stroke={color} strokeWidth={1.25} fill="none" />
+      {/* bottom strap */}
+      <Rect x={3} y={13.5} width={7} height={4} rx={1.5} stroke={color} strokeWidth={1.25} fill="none" />
+      {/* watch body */}
+      <Rect x={0.5} y={4} width={12} height={10} rx={3} stroke={color} strokeWidth={1.25} fill="none" />
+      {/* clock hands */}
+      <Path d="M6.5 7v2.2l1.5 1" stroke={color} strokeWidth={1.1} strokeLinecap="round" fill="none" />
     </Svg>
   );
 }
@@ -163,6 +179,7 @@ export default function HomeScreen({ navigation }) {
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
 
+  const [showWatch, setShowWatch] = useState(false);
   const [volume, setVolume] = useState(75);
   const [battery] = useState(78);
   const [currentSong, setCurrentSong] = useState(0);
@@ -259,9 +276,14 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity style={styles.iconBtn} onPress={showNotifications}>
             <BellIcon color={C.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
-            <ProfileIcon color={C.primary} size={28} />
-          </TouchableOpacity>
+          <View style={styles.topBarRight}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => setShowWatch(true)}>
+              <WatchIcon color={C.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
+              <ProfileIcon color={C.primary} size={28} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Speaker Info */}
@@ -462,6 +484,9 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Smartwatch bezel modal */}
+      <WatchModal visible={showWatch} onClose={() => setShowWatch(false)} />
     </SafeAreaView>
   );
 }
@@ -473,6 +498,9 @@ const makeStyles = (C) => StyleSheet.create({
   topBar: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 20,
+  },
+  topBarRight: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
   },
   iconBtn: {
     width: 28, height: 28, backgroundColor: C.white,

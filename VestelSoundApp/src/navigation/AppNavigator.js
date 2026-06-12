@@ -12,7 +12,6 @@ import EqualizerScreen from '../screens/EqualizerScreen';
 import LightingScreen from '../screens/LightingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
-import WatchScreen from '../screens/WatchScreen';
 import { useTheme } from '../context/ThemeContext';
 import { getColors } from '../theme/colors';
 
@@ -108,11 +107,6 @@ export default function AppNavigator() {
       <Stack.Screen
         name="NowPlaying"
         component={NowPlayingScreen}
-        options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-      />
-      <Stack.Screen
-        name="Watch"
-        component={WatchScreen}
         options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
       />
     </Stack.Navigator>
