@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useI18n } from '../context/ThemeContext';
+import { useI18n, useTheme } from '../context/ThemeContext';
 
 function UnderlineInput({ label, placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
   return (
@@ -44,6 +44,7 @@ const input = StyleSheet.create({
 
 export default function RegisterScreen({ navigation }) {
   const { t } = useI18n();
+  const { loginUser } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -88,7 +89,7 @@ export default function RegisterScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.replace('Main')}
+            onPress={() => { loginUser({ name, email }); navigation.replace('Main'); }}
             activeOpacity={0.85}
           >
             <Text style={styles.buttonText}>{t('register_button')}</Text>

@@ -22,6 +22,7 @@ export const translations = {
     fullname_placeholder: 'Adın Soyadın',
     register_button: 'Kayıt ol',
     have_account: 'Zaten hesabın var mı? ',
+    skip_for_now: 'Şimdilik atla',
 
     // Home
     connected: 'BAĞLI',
@@ -45,6 +46,8 @@ export const translations = {
     light_01: 'Yeni ayar',
     light_02: 'Gece lambası',
     light_03: 'Parti modu',
+    light_04: 'Odak',
+    light_05: 'Rahatla',
     custom_label: 'Özel',
     light_mode_Adaptive: 'Uyarlanır',
     light_mode_Pulse: 'Nabız',
@@ -100,6 +103,7 @@ export const translations = {
     fullname_placeholder: 'Your name',
     register_button: 'Sign up',
     have_account: 'Already have an account? ',
+    skip_for_now: 'Skip for now',
 
     // Home
     connected: 'CONNECTED',
@@ -123,6 +127,8 @@ export const translations = {
     light_01: 'New preset',
     light_02: 'Night light',
     light_03: 'Party mode',
+    light_04: 'Focus',
+    light_05: 'Relax',
     custom_label: 'Custom',
     light_mode_Adaptive: 'Adaptive',
     light_mode_Pulse: 'Pulse',

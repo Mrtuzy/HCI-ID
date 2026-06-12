@@ -12,16 +12,19 @@ import { useTheme, useI18n } from '../context/ThemeContext';
 
 const MODES = ['Adaptive', 'Pulse', 'Rainbow', 'Static', 'Breathe'];
 
-// Saved values for each named preset
 const PRESET_DATA = {
-  '02': { colorAngle: 30,  mode: 'Breathe', brightness: 25, speed: 15 }, // Gece lambası
-  '03': { colorAngle: 300, mode: 'Rainbow', brightness: 95, speed: 85 }, // Parti modu
+  '02': { colorAngle: 30,  mode: 'Breathe',  brightness: 25, speed: 15 }, // Gece lambası
+  '03': { colorAngle: 300, mode: 'Rainbow',  brightness: 95, speed: 85 }, // Parti modu
+  '04': { colorAngle: 210, mode: 'Static',   brightness: 65, speed: 30 }, // Odak
+  '05': { colorAngle: 30,  mode: 'Breathe',  brightness: 12, speed: 8  }, // Rahatla
 };
 
 const PRESETS = [
   { num: '01' },
   { num: '02' },
   { num: '03' },
+  { num: '04' },
+  { num: '05' },
 ];
 
 const TRACK_W = 280;
@@ -75,7 +78,7 @@ const hs = StyleSheet.create({
 });
 
 export default function LightingScreen({ navigation }) {
-  const { isDark } = useTheme();
+  const { isDark, activeLightPreset, setActiveLightPreset } = useTheme();
   const { t } = useI18n();
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
@@ -85,12 +88,11 @@ export default function LightingScreen({ navigation }) {
   const [selectedMode, setSelectedMode] = useState(DEFAULTS.mode);
   const [brightness, setBrightness] = useState(DEFAULTS.brightness);
   const [speed, setSpeed] = useState(DEFAULTS.speed);
-  const [activePreset, setActivePreset] = useState(null);
-  const [savedNewPreset, setSavedNewPreset] = useState(null);
+  const [savedNewPreset, setSavedNewPreset] = useState(DEFAULTS);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const presetName = (num) => t(`light_${num}`);
-  const activeName = activePreset ? presetName(activePreset) : t('custom_label');
+  const activeName = activeLightPreset ? presetName(activeLightPreset) : t('custom_label');
 
   const applyState = (data) => {
     setColorAngle(data.colorAngle);
@@ -102,22 +104,21 @@ export default function LightingScreen({ navigation }) {
 
   const selectPreset = (num) => {
     if (num === '01') {
-      if (!savedNewPreset) return; // nothing saved yet, do nothing
       applyState(savedNewPreset);
     } else {
       applyState(PRESET_DATA[num]);
     }
-    setActivePreset(num);
+    setActiveLightPreset(num);
   };
 
   const save = () => {
     setSavedNewPreset({ colorAngle, mode: selectedMode, brightness, speed });
-    setActivePreset('01');
+    setActiveLightPreset('01');
   };
 
   const reset = () => {
     applyState(DEFAULTS);
-    setActivePreset(null);
+    setActiveLightPreset(null);
   };
 
   const getPresetDotColor = (num) => {
@@ -159,7 +160,7 @@ export default function LightingScreen({ navigation }) {
             onColorSelect={(color, angle) => {
               setSelectedColor(color);
               setColorAngle(angle);
-              setActivePreset(null);
+              setActiveLightPreset(null);
             }}
           />
           <View style={[styles.innerCircle, { backgroundColor: C.cream }]} />
@@ -190,7 +191,7 @@ export default function LightingScreen({ navigation }) {
                 <TouchableOpacity
                   key={m}
                   style={[styles.dropdownItem, i < MODES.length - 1 && styles.dropdownItemBorder]}
-                  onPress={() => { setSelectedMode(m); setDropdownOpen(false); setActivePreset(null); }}
+                  onPress={() => { setSelectedMode(m); setDropdownOpen(false); setActiveLightPreset(null); }}
                 >
                   <Text style={styles.dropdownItemText}>{t(`light_mode_${m}`)}</Text>
                 </TouchableOpacity>
@@ -204,12 +205,12 @@ export default function LightingScreen({ navigation }) {
           <HSlider
             label={t('brightness')}
             value={brightness}
-            onChange={(v) => { setBrightness(v); setActivePreset(null); }}
+            onChange={(v) => { setBrightness(v); setActiveLightPreset(null); }}
           />
           <HSlider
             label={t('speed')}
             value={speed}
-            onChange={(v) => { setSpeed(v); setActivePreset(null); }}
+            onChange={(v) => { setSpeed(v); setActiveLightPreset(null); }}
           />
         </View>
 
@@ -218,22 +219,21 @@ export default function LightingScreen({ navigation }) {
           <Text style={styles.sectionLabel}>{t('presets')}</Text>
           {PRESETS.map((p, i) => {
             const dotColor = getPresetDotColor(p.num);
-            const isActive = activePreset === p.num;
-            const isDisabled = p.num === '01' && !savedNewPreset;
+            const isActive = activeLightPreset === p.num;
             return (
               <View key={p.num}>
                 <TouchableOpacity
                   style={[styles.presetRow, isActive && styles.presetRowActive]}
                   onPress={() => selectPreset(p.num)}
-                  activeOpacity={isDisabled ? 1 : 0.7}
+                  activeOpacity={0.7}
                 >
                   <View style={styles.presetLeft}>
                     {dotColor
                       ? <View style={[styles.presetDot, { backgroundColor: dotColor }]} />
                       : <View style={[styles.presetDot, styles.presetDotEmpty]} />
                     }
-                    <Text style={[styles.presetNum, isDisabled && styles.textDim]}>{p.num}</Text>
-                    <Text style={[styles.presetName, isDisabled && styles.textDim]}>{presetName(p.num)}</Text>
+                    <Text style={styles.presetNum}>{p.num}</Text>
+                    <Text style={styles.presetName}>{presetName(p.num)}</Text>
                   </View>
                   <Svg width={4} height={8} viewBox="0 0 4 8">
                     <Path

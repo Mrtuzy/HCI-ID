@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useI18n } from '../context/ThemeContext';
+import { useI18n, useTheme } from '../context/ThemeContext';
 
 function UnderlineInput({ label, placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
   return (
@@ -52,6 +52,7 @@ const input = StyleSheet.create({
 
 export default function LoginScreen({ navigation }) {
   const { t } = useI18n();
+  const { loginUser } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -92,13 +93,11 @@ export default function LoginScreen({ navigation }) {
           {/* Login Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.replace('Main')}
+            onPress={() => { loginUser({ email, name: email }); navigation.replace('Main'); }}
             activeOpacity={0.85}
           >
             <Text style={styles.buttonText}>{t('login_button')}</Text>
           </TouchableOpacity>
-
-          <View style={styles.spacer} />
 
           {/* Register */}
           <TouchableOpacity
@@ -106,6 +105,16 @@ export default function LoginScreen({ navigation }) {
             onPress={() => navigation.navigate('Register')}
           >
             <Text style={styles.registerText}>{t('create_account')}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.spacer} />
+
+          {/* Skip */}
+          <TouchableOpacity
+            style={styles.skipRow}
+            onPress={() => navigation.replace('Main')}
+          >
+            <Text style={styles.skipText}>{t('skip_for_now')}</Text>
           </TouchableOpacity>
         </ScrollView>
 
@@ -161,5 +170,15 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontFamily: 'Inter_500Medium',
     color: colors.primary,
+  },
+  skipRow: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingBottom: 16,
+  },
+  skipText: {
+    ...typography.body,
+    color: colors.secondary,
+    textDecorationLine: 'underline',
   },
 });

@@ -1,9 +1,9 @@
 import React, { useState, useRef, createContext, useContext } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Modal,
-  ScrollView, FlatList,
+  ScrollView, FlatList, PanResponder,
 } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 
 // ─── Watch display & bezel dimensions ────────────────────────────────────────
@@ -192,47 +192,47 @@ function WatchModeIcon({ icon, size = 14, color = '#6E665C' }) {
   );
 }
 
-// ─── Mode detail list ─────────────────────────────────────────────────────────
-const MODES_DETAIL = [
-  { name: 'Morning', desc: 'Energizing · Bright · Fresh',    icon: 'dawn'   },
-  { name: 'Sleep',   desc: 'Calm · Dim · Blue Light Filter', icon: 'moon'   },
-  { name: 'Ocean',   desc: 'Deep · Immersive · Steady',      icon: 'wave'   },
-  { name: 'Relax',   desc: 'Warm · Calm · Gentle · Natural', icon: 'sun'    },
-  { name: 'Focus',   desc: 'Clear · Sharp · Minimal',        icon: 'target' },
-  { name: 'Sunset',  desc: 'Warm · Golden · Soothing',       icon: 'sunset' },
+// ─── Watch presets (mirrored from mobile LightingScreen) ─────────────────────
+const WATCH_PRESETS = [
+  { key: '01', desc: 'Özel · Kayıtlı',       icon: 'sun'    },
+  { key: '02', desc: 'Sakin · Dim · Nefes',   icon: 'moon'   },
+  { key: '03', desc: 'Canlı · Gökkuşağı',     icon: 'target' },
+  { key: '04', desc: 'Serin · Berrak · Sabit', icon: 'wave'   },
+  { key: '05', desc: 'Sıcak · Yumuşak · Loş', icon: 'sunset' },
 ];
 
 function ModeScreen() {
-  const { wC, activeMode, setActiveMode } = useContext(WatchCtx);
+  const { wC, closeSub } = useContext(WatchCtx);
+  const { activeLightPreset, setActiveLightPreset, t } = useTheme();
   return (
     <View style={[s.subScreen, { backgroundColor: wC.bg }]}>
       <SubHeader />
       <ScrollView showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 12 }}>
         <Text style={[tf(8, '500', wC.dim), { letterSpacing: 1.5, marginBottom: 10 }]}>
-          SELECT MODE
+          PRESET SEÇ
         </Text>
-        {MODES_DETAIL.map((mode) => {
-          const active = activeMode === mode.name;
+        {WATCH_PRESETS.map((preset) => {
+          const active = activeLightPreset === preset.key;
           return (
             <TouchableOpacity
-              key={mode.name}
+              key={preset.key}
               style={[s.modeCard, {
                 backgroundColor: active ? wC.amberBg : wC.card,
                 marginBottom: 8,
               }]}
-              onPress={() => setActiveMode(mode.name)}
+              onPress={() => setActiveLightPreset(preset.key)}
             >
               <View style={[s.modeIconBg, {
                 backgroundColor: active ? 'rgba(0,0,0,0.08)' : wC.iconBg,
               }]}>
-                <WatchModeIcon icon={mode.icon} size={14} color={active ? wC.amber : wC.dim} />
+                <WatchModeIcon icon={preset.icon} size={14} color={active ? wC.amber : wC.dim} />
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={tf(13, '500', active ? wC.amber : wC.text)}>{mode.name}</Text>
+                <Text style={tf(13, '500', active ? wC.amber : wC.text)}>{t(`light_${preset.key}`)}</Text>
                 <Text style={[tf(9, '400', active ? wC.amber : wC.dim),
                   { marginTop: 1, opacity: 0.85 }]}>
-                  {mode.desc}
+                  {preset.desc}
                 </Text>
               </View>
               {active && (
@@ -249,10 +249,22 @@ function ModeScreen() {
   );
 }
 
+const PRESET_DESCS = {
+  '01': 'Özel · Kayıtlı',
+  '02': 'Sakin · Dim · Nefes',
+  '03': 'Canlı · Gökkuşağı',
+};
+
 // ─── W1: Connected ────────────────────────────────────────────────────────────
 function W1Connected() {
   const { wC } = useContext(WatchCtx);
+  const { activeLightPreset, t } = useTheme();
   const [volume, setVolume] = useState(60);
+  const presetName = activeLightPreset ? t(`light_${activeLightPreset}`) : t('custom_label');
+  const presetDesc = PRESET_DESCS[activeLightPreset] || 'Özel Ayar';
+  const activePresetObj = WATCH_PRESETS.find(p => p.key === activeLightPreset);
+  const presetIcon = activePresetObj ? activePresetObj.icon : 'dawn';
+
   return (
     <View style={[s.screen, { backgroundColor: wC.bg }]}>
       <TimeBar />
@@ -263,22 +275,11 @@ function W1Connected() {
 
       <View style={s.modeBlock}>
         <View style={[s.modeCircle, { backgroundColor: wC.text }]}>
-          <Svg width={80} height={80} viewBox="0 0 100 100">
-            <Circle cx={50} cy={50} r={48} stroke={wC.bg} strokeWidth={1} fill="none" />
-            <Circle cx={50} cy={50} r={36} stroke={wC.bg} strokeWidth={0.5} fill="none" />
-            <Circle cx={50} cy={50} r={8} fill={wC.bg} />
-            {[0,45,90,135,180,225,270,315].map(deg => {
-              const rad = deg * Math.PI / 180;
-              const x1 = 50 + 14 * Math.cos(rad), y1 = 50 + 14 * Math.sin(rad);
-              const x2 = 50 + 22 * Math.cos(rad), y2 = 50 + 22 * Math.sin(rad);
-              return <Path key={deg} d={`M${x1} ${y1} L${x2} ${y2}`}
-                stroke={wC.bg} strokeWidth={1.5} />;
-            })}
-          </Svg>
+          <WatchModeIcon icon={presetIcon} size={36} color={wC.bg} />
         </View>
         <View style={{ marginLeft: 14 }}>
-          <Text style={tf(17, '500', wC.text)}>Sunset</Text>
-          <Text style={[tf(10, '400', wC.dim), { marginTop: 2 }]}>Warm &amp; Calm</Text>
+          <Text style={tf(17, '500', wC.text)}>{presetName}</Text>
+          <Text style={[tf(10, '400', wC.dim), { marginTop: 2 }]}>{presetDesc}</Text>
         </View>
       </View>
 
@@ -308,22 +309,13 @@ function W1Connected() {
   );
 }
 
-// ─── W2: Mode Selector (circular picker) ─────────────────────────────────────
-const W2_MODES = [
-  { name: 'Morning', icon: 'dawn'   },
-  { name: 'Sleep',   icon: 'moon'   },
-  { name: 'Ocean',   icon: 'wave'   },
-  { name: 'Relax',   icon: 'sun'    },
-  { name: 'Focus',   icon: 'target' },
-  { name: 'Sunset',  icon: 'sunset' },
-];
-
+// ─── W2: Mode Selector (circular picker — 3 presets mirroring mobile) ────────
 function W2Mode() {
-  const { wC, activeMode, setActiveMode } = useContext(WatchCtx);
-  const R = (WATCH_W - 80) / 2; // 81
+  const { wC } = useContext(WatchCtx);
+  const { activeLightPreset, setActiveLightPreset, t } = useTheme();
+  const R = (WATCH_W - 80) / 2;
   const ICON_R = R * 0.72;
-  const activeIdx = W2_MODES.findIndex(m => m.name === activeMode);
-  const active = activeIdx >= 0 ? activeIdx : 5;
+  const activeIdx = WATCH_PRESETS.findIndex(p => p.key === activeLightPreset);
 
   return (
     <View style={[s.screen, { backgroundColor: wC.bg, justifyContent: 'center', alignItems: 'center' }]}>
@@ -332,14 +324,14 @@ function W2Mode() {
           <Circle cx={R + 20} cy={R + 20} r={R} fill={wC.text} />
           <Circle cx={R + 20} cy={R + 20} r={R * 0.3} fill={wC.cardBg} />
         </Svg>
-        {W2_MODES.map((mode, i) => {
-          const angle = (i * 60 - 90) * (Math.PI / 180);
+        {WATCH_PRESETS.map((preset, i) => {
+          const angle = (i * 72 - 90) * (Math.PI / 180);
           const x = R + 20 + ICON_R * Math.cos(angle);
           const y = R + 20 + ICON_R * Math.sin(angle);
-          const isActive = i === active;
+          const isActive = i === activeIdx;
           return (
             <TouchableOpacity
-              key={mode.name}
+              key={preset.key}
               style={{
                 position: 'absolute',
                 left: x - 19, top: y - 19,
@@ -347,15 +339,17 @@ function W2Mode() {
                 backgroundColor: isActive ? wC.bg : 'transparent',
                 justifyContent: 'center', alignItems: 'center',
               }}
-              onPress={() => setActiveMode(mode.name)}
+              onPress={() => setActiveLightPreset(preset.key)}
             >
-              <WatchModeIcon icon={mode.icon} size={17}
+              <WatchModeIcon icon={preset.icon} size={17}
                 color={isActive ? wC.text : wC.bg} />
             </TouchableOpacity>
           );
         })}
         <View style={[s.wheelCenter, { width: R * 2 + 40, height: R * 2 + 40 }]}>
-          <Text style={tf(12, '400', wC.dim)}>{W2_MODES[active]?.name}</Text>
+          <Text style={tf(12, '400', wC.dim)}>
+            {activeLightPreset ? t(`light_${activeLightPreset}`) : t('custom_label')}
+          </Text>
         </View>
       </View>
     </View>
@@ -364,65 +358,122 @@ function W2Mode() {
 
 // ─── W3: Lighting ─────────────────────────────────────────────────────────────
 function W3Lighting() {
-  const { wC } = useContext(WatchCtx);
-  const [brightness, setBrightness] = useState(90);
-  const [isOn, setIsOn] = useState(true);
-  const ARC_W = WATCH_W - 40;
-  const ARC_R = ARC_W / 2 - 6;
-  const CIRC = Math.PI * ARC_R;
+  const { wC, openSub } = useContext(WatchCtx);
+  const { lightingOn, setLightingOn } = useTheme();
+  const [brightness, setBrightness] = useState(70);
+
+  // Arc geometry (content width = WATCH_W - 2*16 = 210)
+  const ARC_R = 82;
+  const CX    = 105;  // half of 210
+  const CY    = ARC_R + 8; // = 90; arc center y in SVG
+  const ARC_LEN = Math.PI * ARC_R;
+  const SUN_Y   = CY - ARC_R * 0.52; // ≈ 47, inside the arch
+
+  // Thumb position along arc (−π = 0%, 0 = 100%)
+  const thumbRad = (-1 + brightness / 100) * Math.PI;
+  const thumbX   = CX + ARC_R * Math.cos(thumbRad);
+  const thumbY   = CY + ARC_R * Math.sin(thumbRad);
+  const fillLen  = (brightness / 100) * ARC_LEN;
+
+  function updateBrightness(lx, ly) {
+    const dx = lx - CX;
+    const dy = ly - CY;
+    let angle = Math.atan2(dy, dx);
+    // snap bottom-half touches to nearest arc end
+    if (angle > 0) angle = angle > Math.PI / 2 ? -Math.PI : 0;
+    setBrightness(Math.round(Math.max(0, Math.min(100, (angle + Math.PI) / Math.PI * 100))));
+  }
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder:  () => true,
+    onPanResponderGrant: (e) => updateBrightness(e.nativeEvent.locationX, e.nativeEvent.locationY),
+    onPanResponderMove:  (e) => updateBrightness(e.nativeEvent.locationX, e.nativeEvent.locationY),
+  })).current;
 
   return (
     <View style={[s.screen, { backgroundColor: wC.bg }]}>
       <TimeBar />
-      <Text style={[tf(14, '500', wC.text), { marginBottom: 10 }]}>Lighting</Text>
+      <Text style={[tf(14, '500', wC.text), { textAlign: 'center', marginBottom: 14 }]}>
+        Lighting
+      </Text>
 
-      <View style={{ alignItems: 'center', marginBottom: 6 }}>
-        <Svg width={ARC_W} height={ARC_R + 18}>
+      {/* Arc brightness control */}
+      <View {...pan.panHandlers}>
+        <Svg width={CX * 2} height={CY + 14}>
+          {/* Track */}
           <Path
-            d={`M 10 ${ARC_R + 4} A ${ARC_R} ${ARC_R} 0 0 1 ${ARC_W - 10} ${ARC_R + 4}`}
-            stroke={wC.divider} strokeWidth={8} fill="none" strokeLinecap="round"
+            d={`M ${CX - ARC_R} ${CY} A ${ARC_R} ${ARC_R} 0 0 1 ${CX + ARC_R} ${CY}`}
+            stroke={wC.divider} strokeWidth={5} fill="none" strokeLinecap="round"
           />
-          <Path
-            d={`M 10 ${ARC_R + 4} A ${ARC_R} ${ARC_R} 0 0 1 ${ARC_W - 10} ${ARC_R + 4}`}
-            stroke={wC.text} strokeWidth={8} fill="none" strokeLinecap="round"
-            strokeDasharray={`${(brightness / 100) * CIRC} ${CIRC}`}
-          />
+          {/* Filled arc (amber) */}
+          {brightness > 0 && (
+            <Path
+              d={`M ${CX - ARC_R} ${CY} A ${ARC_R} ${ARC_R} 0 0 1 ${CX + ARC_R} ${CY}`}
+              stroke={wC.amber} strokeWidth={5} fill="none" strokeLinecap="round"
+              strokeDasharray={`${fillLen} ${ARC_LEN}`}
+            />
+          )}
+          {/* Sun rays */}
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+            const r  = (deg * Math.PI) / 180;
+            const x1 = CX + 13 * Math.cos(r);
+            const y1 = SUN_Y + 13 * Math.sin(r);
+            const x2 = CX + 18 * Math.cos(r);
+            const y2 = SUN_Y + 18 * Math.sin(r);
+            return (
+              <Path key={deg} d={`M${x1} ${y1} L${x2} ${y2}`}
+                stroke={wC.text} strokeWidth={1.5} strokeLinecap="round" />
+            );
+          })}
+          {/* Sun circle */}
+          <Circle cx={CX} cy={SUN_Y} r={9} fill={wC.bg} stroke={wC.text} strokeWidth={1.5} />
+          {/* Brightness % text */}
+          <SvgText
+            x={CX} y={SUN_Y + 36}
+            textAnchor="middle"
+            fontFamily="Inter_400Regular"
+            fontSize={11}
+            fill={wC.dim}
+          >
+            {brightness}%
+          </SvgText>
+          {/* Draggable thumb */}
+          <Circle cx={thumbX} cy={thumbY} r={7} fill={wC.bg} stroke={wC.text} strokeWidth={2} />
         </Svg>
-        <Text style={[tf(13, '400', wC.text), { marginTop: -4 }]}>{brightness}%</Text>
       </View>
 
-      <View style={s.brightnessRow}>
-        <TouchableOpacity onPress={() => setBrightness(b => Math.max(0, b - 10))}>
-          <Text style={tf(22, '400', wC.dim)}>−</Text>
-        </TouchableOpacity>
-        <View style={[s.bTrack, { backgroundColor: wC.divider }]}>
-          <View style={[s.bFill, { backgroundColor: wC.text, width: `${brightness}%` }]} />
-        </View>
-        <TouchableOpacity onPress={() => setBrightness(b => Math.min(100, b + 10))}>
-          <Text style={tf(22, '400', wC.dim)}>+</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={{ flex: 1 }} />
 
-      <View style={{ height: 20 }} />
-
-      <View style={s.lightBtns}>
+      {/* Bottom buttons */}
+      <View style={[s.lightBtns, { marginBottom: 4 }]}>
+        {/* Preset / colour indicator */}
         <TouchableOpacity
-          style={[s.lightBtn, { backgroundColor: wC.white }]}
-          onPress={() => setIsOn(false)}
+          style={[s.lightBtn, { backgroundColor: wC.text }]}
+          onPress={() => openSub('mode')}
         >
-          <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path d="M18 6L6 18M6 6l12 12" stroke={isOn ? wC.dim : wC.text}
-              strokeWidth={2} strokeLinecap="round" />
+          <Svg width={22} height={22} viewBox="0 0 22 22">
+            <Circle cx={11} cy={11} r={8} fill="none" stroke={wC.bg} strokeWidth={1.5} />
+            <Circle cx={11} cy={11} r={3.5} fill={wC.bg} />
           </Svg>
         </TouchableOpacity>
+        {/* Power toggle */}
         <TouchableOpacity
-          style={[s.lightBtn, { backgroundColor: isOn ? wC.text : wC.white }]}
-          onPress={() => setIsOn(true)}
+          style={[
+            s.lightBtn,
+            lightingOn
+              ? { backgroundColor: wC.amber }
+              : { backgroundColor: wC.white, borderWidth: 1.5, borderColor: wC.divider },
+          ]}
+          onPress={() => setLightingOn(v => !v)}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24">
-            <Path d="M0 12h8M16 12h8M12 0v8M12 16v8"
-              stroke={isOn ? wC.bg : wC.dim} strokeWidth={2} strokeLinecap="round" />
-            <Circle cx={12} cy={12} r={4} fill={isOn ? wC.bg : wC.dim} />
+            <Path d="M12 3v9"
+              stroke={lightingOn ? wC.bg : wC.dim}
+              strokeWidth={2.5} strokeLinecap="round" />
+            <Path d="M18.36 6.64a9 9 0 1 1-12.72 0"
+              stroke={lightingOn ? wC.bg : wC.dim}
+              strokeWidth={2} strokeLinecap="round" fill="none" />
           </Svg>
         </TouchableOpacity>
       </View>
@@ -517,7 +568,8 @@ function W4Playing() {
 
 // ─── W5: Status ───────────────────────────────────────────────────────────────
 function W5Status() {
-  const { wC, activeMode, openSub } = useContext(WatchCtx);
+  const { wC, openSub } = useContext(WatchCtx);
+  const { activeLightPreset, t } = useTheme();
 
   const rows = [
     {
@@ -534,7 +586,7 @@ function W5Status() {
     },
     {
       label: 'Mode',
-      value: activeMode,
+      value: activeLightPreset ? t(`light_${activeLightPreset}`) : t('custom_label'),
       sub: 'mode',
       iconPath: 'M12 3v1M12 20v1M3 12H2M22 12h-1M5.6 5.6l-.7-.7M19.1 19.1l-.7-.7M5.6 18.4l-.7.7M19.1 4.9l-.7.7M12 7a5 5 0 1 1 0 10A5 5 0 0 1 12 7z',
     },
@@ -658,7 +710,6 @@ export default function WatchModal({ visible, onClose }) {
   const wC = getWC(isDark);
   const [idx, setIdx] = useState(0);
   const [subScreen, setSubScreen] = useState(null); // null | 'bluetooth' | 'mode'
-  const [activeMode, setActiveMode] = useState('Sunset');
   const flatRef = useRef(null);
 
   const openSub = (name) => setSubScreen(name);
@@ -669,7 +720,7 @@ export default function WatchModal({ visible, onClose }) {
     flatRef.current?.scrollToIndex({ index: i, animated: true });
   };
 
-  const ctxValue = { wC, activeMode, setActiveMode, openSub, closeSub };
+  const ctxValue = { wC, openSub, closeSub };
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

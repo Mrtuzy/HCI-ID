@@ -47,10 +47,12 @@ export default function EqualizerScreen({ navigation }) {
   };
 
   const updateBand = (i, v) => {
-    const next = [...eqValues];
-    next[i] = v;
-    setEqValues(next);
-    setActivePreset('04'); // any manual tweak becomes Custom
+    setEqValues(prev => {
+      const next = [...prev];
+      next[i] = v;
+      return next;
+    });
+    setActivePreset('04');
   };
 
   const save = () => {

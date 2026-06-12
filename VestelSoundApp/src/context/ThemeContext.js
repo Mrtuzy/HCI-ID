@@ -6,9 +6,13 @@ const AppContext = createContext();
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false);
   const [lang, setLang] = useState('tr');
-  // Where the Home tab sits in the bottom bar: 'center' | 'left' | 'right'
   const [navHomePosition, setNavHomePosition] = useState('center');
   const [notifications, setNotifications] = useState([]);
+  // null = guest, { name, email } = logged in
+  const [user, setUser] = useState(null);
+  // Lighting state (synced between mobile and watch)
+  const [activeLightPreset, setActiveLightPreset] = useState(null);
+  const [lightingOn, setLightingOn] = useState(true);
 
   const toggleTheme = () => setIsDark((d) => !d);
 
@@ -44,6 +48,9 @@ export function ThemeProvider({ children }) {
     setNotifications((list) => list.filter((n) => n.id !== id));
   }, []);
 
+  const loginUser = useCallback((userData) => setUser(userData), []);
+  const logoutUser = useCallback(() => setUser(null), []);
+
   return (
     <AppContext.Provider
       value={{
@@ -57,6 +64,13 @@ export function ThemeProvider({ children }) {
         notifications,
         showNotifications,
         dismissNotification,
+        user,
+        loginUser,
+        logoutUser,
+        activeLightPreset,
+        setActiveLightPreset,
+        lightingOn,
+        setLightingOn,
       }}
     >
       {children}

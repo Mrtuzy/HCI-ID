@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   SafeAreaView, ScrollView, PanResponder, Modal,
@@ -11,49 +11,26 @@ import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { useTheme, useI18n } from '../context/ThemeContext';
 
-const SONGS = [
-  {
-    id: 1, title: 'Midnight Waves', artist: 'Luna Echo',
-    duration: '3:42', durationSecs: 222,
-    bgColor: '#2C1810', accentColor: '#B5562B',
-  },
-  {
-    id: 2, title: 'Golden Hour', artist: 'Solar Drift',
-    duration: '4:15', durationSecs: 255,
-    bgColor: '#1A130A', accentColor: '#C9A86C',
-  },
-  {
-    id: 3, title: 'Neon Pulse', artist: 'Circuit Mind',
-    duration: '3:28', durationSecs: 208,
-    bgColor: '#0A1520', accentColor: '#4A90D9',
-  },
-  {
-    id: 4, title: 'Desert Rain', artist: 'Mirage Sound',
-    duration: '5:01', durationSecs: 301,
-    bgColor: '#12100A', accentColor: '#8B7355',
-  },
+const SPEAKERS = [
+  { id: 1, name: 'Vestel Aura Pro',  room: 'Oturma Odası', battery: 78, connected: true,  model: 'AURA Pro 360' },
+  { id: 2, name: 'Aura Studio',      room: 'Yatak Odası',  battery: 45, connected: false, model: 'AURA Studio 2' },
+  { id: 3, name: 'Aura Go',          room: 'Mutfak',       battery: 92, connected: false, model: 'AURA Go Portable' },
 ];
 
-function fmt(secs) {
-  const m = Math.floor(secs / 60);
-  const s = Math.floor(secs % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function AlbumArt({ song, size = 240 }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = size / 2;
+function SpeakerCard({ speaker, size = 240 }) {
+  const cx = size / 2, cy = size / 2;
+  const accent = speaker.connected ? '#C9842A' : '#4A4540';
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <Rect x={0} y={0} width={size} height={size} fill={song.bgColor} rx={size > 100 ? 12 : 8} />
-      <Circle cx={cx} cy={cy} r={r * 0.76} fill={song.accentColor} opacity={0.1} />
-      <Circle cx={cx} cy={cy} r={r * 0.58} fill={song.accentColor} opacity={0.18} />
-      <Circle cx={cx} cy={cy} r={r * 0.4} fill={song.accentColor} opacity={0.28} />
-      <Circle cx={cx} cy={cy} r={r * 0.46} stroke={song.accentColor} strokeWidth={0.7} fill="none" opacity={0.2} />
-      <Circle cx={cx} cy={cy} r={r * 0.34} stroke={song.accentColor} strokeWidth={0.7} fill="none" opacity={0.35} />
-      <Circle cx={cx} cy={cy} r={r * 0.22} fill={song.accentColor} opacity={0.65} />
-      <Circle cx={cx} cy={cy} r={r * 0.08} fill={song.accentColor} />
+      <Rect x={0} y={0} width={size} height={size} fill="#1C1817" rx={size > 100 ? 12 : 8} />
+      {[0.88, 0.74, 0.60, 0.46, 0.32].map((r, i) => (
+        <Circle key={i} cx={cx} cy={cy} r={r * size / 2}
+          stroke="#2C2420" strokeWidth={i === 0 ? 0.5 : 1} fill="none" />
+      ))}
+      <Circle cx={cx} cy={cy} r={size * 0.27} fill="#252220" />
+      <Circle cx={cx} cy={cy} r={size * 0.17} fill="#1A1716" />
+      <Circle cx={cx} cy={cy} r={size * 0.09} fill={accent} opacity={0.5} />
+      <Circle cx={cx} cy={cy} r={size * 0.055} fill={accent} />
     </Svg>
   );
 }
@@ -135,43 +112,6 @@ const vol = StyleSheet.create({
   thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, marginLeft: -7, top: 3 },
 });
 
-function ProgressSlider({ value, onChange }) {
-  const trackWidth = useRef(280);
-  const startValue = useRef(value);
-  const currentValue = useRef(value);
-
-  const pan = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => { startValue.current = currentValue.current; },
-    onPanResponderMove: (_, g) => {
-      const delta = g.dx / trackWidth.current;
-      const next = Math.max(0, Math.min(1, startValue.current + delta));
-      currentValue.current = next;
-      onChange(next);
-    },
-  })).current;
-
-  currentValue.current = value;
-  return (
-    <View
-      style={prog.wrapper}
-      onLayout={e => { trackWidth.current = e.nativeEvent.layout.width; }}
-    >
-      <View style={prog.track}>
-        <View style={[prog.fill, { width: `${value * 100}%` }]} />
-        <View style={[prog.thumb, { left: `${value * 100}%` }]} {...pan.panHandlers} />
-      </View>
-    </View>
-  );
-}
-
-const prog = StyleSheet.create({
-  wrapper: { width: '100%', paddingVertical: 10 },
-  track: { height: 3, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 2, position: 'relative' },
-  fill: { height: 3, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 2 },
-  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFFFFF', top: -5.5, marginLeft: -7 },
-});
 
 export default function HomeScreen({ navigation }) {
   const { isDark, showNotifications } = useTheme();
@@ -181,91 +121,10 @@ export default function HomeScreen({ navigation }) {
 
   const [showWatch, setShowWatch] = useState(false);
   const [volume, setVolume] = useState(75);
-  const [battery] = useState(78);
-  const [currentSong, setCurrentSong] = useState(0);
-  const [showPlayer, setShowPlayer] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState(0); // 0=off 1=all 2=one
-  const [progress, setProgress] = useState(0);
-  const [likedSongs, setLikedSongs] = useState(new Set());
+  const [currentSpeaker, setCurrentSpeaker] = useState(0);
+  const [showSpeakerDetail, setShowSpeakerDetail] = useState(false);
 
-  // Refs so the interval callback always sees current values
-  const shuffleRef = useRef(false);
-  const repeatRef = useRef(0);
-  const songIdxRef = useRef(0);
-  const progressRef = useRef(0);
-  useEffect(() => { shuffleRef.current = isShuffle; }, [isShuffle]);
-  useEffect(() => { repeatRef.current = repeatMode; }, [repeatMode]);
-  useEffect(() => { songIdxRef.current = currentSong; }, [currentSong]);
-  useEffect(() => { progressRef.current = progress; }, [progress]);
-
-  const song = SONGS[currentSong];
-  const isLiked = likedSongs.has(song.id);
-
-  // Auto-advance progress while playing. All state transitions happen directly
-  // in the interval (never inside a setState updater) to avoid update cascades.
-  useEffect(() => {
-    if (!isPlaying) return;
-    const tick = 1 / (song.durationSecs * 2);
-    const id = setInterval(() => {
-      const next = progressRef.current + tick;
-      if (next < 1) {
-        progressRef.current = next;
-        setProgress(next);
-        return;
-      }
-      // Reached the end of the track.
-      const mode = repeatRef.current;
-      const shuffle = shuffleRef.current;
-      const idx = songIdxRef.current;
-      progressRef.current = 0;
-      setProgress(0);
-      if (mode === 2) return; // repeat one: just restart
-      const isLast = idx === SONGS.length - 1;
-      if (mode === 0 && isLast && !shuffle) {
-        setIsPlaying(false);
-        return;
-      }
-      const nextIdx = shuffle
-        ? Math.floor(Math.random() * SONGS.length)
-        : (idx + 1) % SONGS.length;
-      setCurrentSong(nextIdx);
-    }, 500);
-    return () => clearInterval(id);
-  }, [isPlaying, currentSong]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const skipForward = () => {
-    const next = shuffleRef.current
-      ? Math.floor(Math.random() * SONGS.length)
-      : (currentSong + 1) % SONGS.length;
-    setCurrentSong(next);
-    setProgress(0);
-  };
-
-  const skipBackward = () => {
-    if (progress > 0.05) {
-      setProgress(0);
-    } else {
-      setCurrentSong((currentSong - 1 + SONGS.length) % SONGS.length);
-      setProgress(0);
-    }
-  };
-
-  const toggleLike = () => {
-    setLikedSongs(prev => {
-      const next = new Set(prev);
-      if (next.has(song.id)) next.delete(song.id);
-      else next.add(song.id);
-      return next;
-    });
-  };
-
-  const repeatIconColors = [
-    'rgba(255,255,255,0.3)',
-    'rgba(255,255,255,0.9)',
-    '#B5562B',
-  ];
+  const speaker = SPEAKERS[currentSpeaker];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -288,13 +147,16 @@ export default function HomeScreen({ navigation }) {
 
         {/* Speaker Info */}
         <View style={styles.speakerInfo}>
-          <Text style={styles.connectedLabel}>{t('connected')}</Text>
-          <Text style={styles.speakerName}>Vestel Aura Speaker</Text>
+          <Text style={styles.connectedLabel}>{speaker.connected ? t('connected') : 'BAĞLI DEĞİL'}</Text>
+          <Text style={styles.speakerName}>{speaker.name}</Text>
         </View>
 
-        {/* Album Art Row */}
+        {/* Speaker Card Carousel */}
         <View style={styles.albumRow}>
-          <TouchableOpacity style={styles.arrowBtn} onPress={skipBackward}>
+          <TouchableOpacity
+            style={styles.arrowBtn}
+            onPress={() => setCurrentSpeaker(i => Math.max(0, i - 1))}
+          >
             <Svg width={6} height={12} viewBox="0 0 6 12">
               <Path d="M6 0L0 6l6 6" stroke={C.primary} strokeWidth={1.5} fill="none" />
             </Svg>
@@ -302,23 +164,26 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={styles.albumArt}
-            onPress={() => setShowPlayer(true)}
+            onPress={() => setShowSpeakerDetail(true)}
             activeOpacity={0.9}
           >
-            <AlbumArt song={song} size={240} />
+            <SpeakerCard speaker={speaker} size={240} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.arrowBtn} onPress={skipForward}>
+          <TouchableOpacity
+            style={styles.arrowBtn}
+            onPress={() => setCurrentSpeaker(i => Math.min(SPEAKERS.length - 1, i + 1))}
+          >
             <Svg width={6} height={12} viewBox="0 0 6 12">
               <Path d="M0 0l6 6-6 6" stroke={C.primary} strokeWidth={1.5} fill="none" />
             </Svg>
           </TouchableOpacity>
         </View>
 
-        {/* Song Info */}
+        {/* Speaker Detail Info */}
         <View style={styles.songInfo}>
-          <Text style={styles.songTitle}>{song.title}</Text>
-          <Text style={styles.songArtist}>{song.artist}</Text>
+          <Text style={styles.songTitle}>{speaker.name}</Text>
+          <Text style={styles.songArtist}>{speaker.room}</Text>
         </View>
 
         {/* Volume Block */}
@@ -338,11 +203,11 @@ export default function HomeScreen({ navigation }) {
                 strokeWidth={6}
                 fill="none"
                 strokeLinecap="round"
-                strokeDasharray={`${(battery / 100) * 126} 126`}
+                strokeDasharray={`${(speaker.battery / 100) * 126} 126`}
               />
             </Svg>
             <View style={styles.batteryValueRow}>
-              <Text style={styles.knobValue}>{Math.round(battery)}</Text>
+              <Text style={styles.knobValue}>{Math.round(speaker.battery)}</Text>
               <Text style={styles.knobUnit}>%</Text>
             </View>
             <Text style={styles.batteryLabel}>{t('battery_level')}</Text>
@@ -355,132 +220,66 @@ export default function HomeScreen({ navigation }) {
 
       </ScrollView>
 
-      {/* Player Panel */}
+      {/* Speaker Detail Panel */}
       <Modal
-        visible={showPlayer}
+        visible={showSpeakerDetail}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowPlayer(false)}
+        onRequestClose={() => setShowSpeakerDetail(false)}
       >
         <View style={panel.overlay}>
           <View style={panel.sheet}>
-            {/* Drag Handle */}
             <View style={panel.handle} />
 
-            {/* Header */}
             <View style={panel.header}>
-              <Text style={panel.headerTitle}>{t('now_playing')}</Text>
+              <Text style={panel.headerTitle}>HOPARLÖR BİLGİSİ</Text>
               <TouchableOpacity
-                onPress={() => setShowPlayer(false)}
+                onPress={() => setShowSpeakerDetail(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="close" size={22} color="rgba(255,255,255,0.5)" />
               </TouchableOpacity>
             </View>
 
-            {/* Track Row: art + meta + like */}
+            {/* Speaker art + name/model */}
             <View style={panel.trackRow}>
               <View style={panel.artWrapper}>
-                <AlbumArt song={song} size={64} />
+                <SpeakerCard speaker={speaker} size={64} />
               </View>
               <View style={panel.trackMeta}>
-                <Text style={panel.trackTitle} numberOfLines={1}>{song.title}</Text>
-                <Text style={panel.trackArtist}>{song.artist}</Text>
+                <Text style={panel.trackTitle} numberOfLines={1}>{speaker.name}</Text>
+                <Text style={panel.trackArtist}>{speaker.model}</Text>
               </View>
-              <TouchableOpacity
-                onPress={toggleLike}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name={isLiked ? 'heart' : 'heart-outline'}
-                  size={24}
-                  color={isLiked ? '#FF4D6D' : 'rgba(255,255,255,0.35)'}
-                />
-              </TouchableOpacity>
+              <View style={[panel.statusDot, { backgroundColor: speaker.connected ? '#3A9E3A' : '#666' }]} />
             </View>
 
-            {/* Progress Slider */}
-            <View style={panel.progressSection}>
-              <ProgressSlider value={progress} onChange={setProgress} />
-              <View style={panel.timeRow}>
-                <Text style={panel.timeText}>{fmt(progress * song.durationSecs)}</Text>
-                <Text style={panel.timeText}>{song.duration}</Text>
+            {/* Info rows */}
+            <View style={panel.infoBlock}>
+              <View style={panel.infoRow}>
+                <Text style={panel.infoLabel}>KONUM</Text>
+                <Text style={panel.infoValue}>{speaker.room}</Text>
+              </View>
+              <View style={panel.infoRow}>
+                <Text style={panel.infoLabel}>DURUM</Text>
+                <Text style={[panel.infoValue, { color: speaker.connected ? '#3A9E3A' : 'rgba(255,255,255,0.4)' }]}>
+                  {speaker.connected ? 'Bağlı' : 'Bağlı Değil'}
+                </Text>
+              </View>
+              <View style={panel.infoRow}>
+                <Text style={panel.infoLabel}>PİL</Text>
+                <Text style={panel.infoValue}>{speaker.battery}%</Text>
               </View>
             </View>
 
-            {/* Playback Controls */}
-            <View style={panel.controls}>
-              <TouchableOpacity
-                style={panel.controlBtn}
-                onPress={() => setIsShuffle(s => !s)}
-              >
-                <Ionicons
-                  name="shuffle"
-                  size={22}
-                  color={isShuffle ? '#FFFFFF' : 'rgba(255,255,255,0.3)'}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={panel.controlBtn} onPress={skipBackward}>
-                <Ionicons name="play-skip-back" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={panel.playBtn} onPress={() => setIsPlaying(p => !p)}>
-                <Ionicons
-                  name={isPlaying ? 'pause' : 'play'}
-                  size={32}
-                  color="#1C1817"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={panel.controlBtn} onPress={skipForward}>
-                <Ionicons name="play-skip-forward" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={panel.controlBtn}
-                onPress={() => setRepeatMode(m => (m + 1) % 3)}
-              >
-                <View>
-                  <Ionicons
-                    name={repeatMode === 0 ? 'repeat-outline' : 'repeat'}
-                    size={22}
-                    color={repeatIconColors[repeatMode]}
-                  />
-                  {repeatMode === 2 && <Text style={panel.repeatOneLabel}>1</Text>}
-                </View>
-              </TouchableOpacity>
+            {/* Battery bar */}
+            <View style={panel.batteryBar}>
+              <View style={[panel.batteryFill, { width: `${speaker.battery}%`, backgroundColor: speaker.battery > 20 ? '#3A9E3A' : '#E05252' }]} />
             </View>
 
-            {/* Queue */}
-            <Text style={panel.queueLabel}>{t('queue')}</Text>
-            <ScrollView style={panel.songList} showsVerticalScrollIndicator={false}>
-              {SONGS.map((s, i) => (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[panel.songRow, i === currentSong && panel.songRowActive]}
-                  onPress={() => { setCurrentSong(i); setProgress(0); }}
-                  activeOpacity={0.7}
-                >
-                  <View style={panel.songArtSmall}>
-                    <AlbumArt song={s} size={44} />
-                  </View>
-                  <View style={panel.songMeta}>
-                    <Text
-                      style={[panel.songRowTitle, i === currentSong && panel.songRowTitleActive]}
-                      numberOfLines={1}
-                    >
-                      {s.title}
-                    </Text>
-                    <Text style={panel.songRowArtist}>{s.artist}</Text>
-                  </View>
-                  <Text style={panel.songRowDuration}>{s.duration}</Text>
-                  {likedSongs.has(s.id) && (
-                    <Ionicons name="heart" size={12} color="#FF4D6D" style={{ marginLeft: 6 }} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {/* Volume */}
+            <View style={{ marginTop: 24 }}>
+              <VolumeSlider value={volume} onChange={setVolume} />
+            </View>
           </View>
         </View>
       </Modal>
@@ -554,48 +353,28 @@ const panel = StyleSheet.create({
     width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 2, alignSelf: 'center', marginBottom: 18,
   },
-
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 20,
   },
   headerTitle: { ...typography.labelMd, color: 'rgba(255,255,255,0.45)', letterSpacing: 2.5 },
-
   trackRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   artWrapper: { borderRadius: 8, overflow: 'hidden', marginRight: 14 },
   trackMeta: { flex: 1 },
   trackTitle: { ...typography.titleSm, color: '#FFFFFF', marginBottom: 3 },
   trackArtist: { ...typography.caption, color: 'rgba(255,255,255,0.45)' },
-
-  progressSection: { marginBottom: 20 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
-  timeText: { ...typography.caption, color: 'rgba(255,255,255,0.4)' },
-
-  controls: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 24,
+  statusDot: { width: 10, height: 10, borderRadius: 5 },
+  infoBlock: { marginBottom: 16 },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', paddingVertical: 10,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.07)',
   },
-  controlBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  playBtn: {
-    width: 60, height: 60, borderRadius: 30,
-    backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center',
+  infoLabel: { ...typography.label, color: 'rgba(255,255,255,0.4)', fontSize: 11 },
+  infoValue: { ...typography.body, color: '#FFFFFF', fontSize: 14 },
+  batteryBar: {
+    height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden',
   },
-  repeatOneLabel: {
-    position: 'absolute', bottom: -3, right: -3,
-    fontSize: 9, fontWeight: '700', color: '#B5562B',
-  },
-
-  queueLabel: { ...typography.labelMd, color: 'rgba(255,255,255,0.4)', marginBottom: 10 },
-  songList: { maxHeight: 220 },
-  songRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 8, paddingHorizontal: 6, borderRadius: 10, marginBottom: 2,
-  },
-  songRowActive: { backgroundColor: 'rgba(255,255,255,0.07)' },
-  songArtSmall: { borderRadius: 6, overflow: 'hidden', marginRight: 12 },
-  songMeta: { flex: 1 },
-  songRowTitle: { ...typography.body, color: 'rgba(255,255,255,0.55)', marginBottom: 2 },
-  songRowTitleActive: { color: '#FFFFFF', fontFamily: 'Inter_500Medium' },
-  songRowArtist: { ...typography.caption, color: 'rgba(255,255,255,0.35)' },
-  songRowDuration: { ...typography.caption, color: 'rgba(255,255,255,0.35)' },
+  batteryFill: { height: 4, borderRadius: 2 },
 });

@@ -48,8 +48,9 @@ const row = StyleSheet.create({
 });
 
 export default function SettingsScreen({ navigation }) {
-  const { isDark, toggleTheme, lang, setLang, navHomePosition, setNavHomePosition } = useTheme();
+  const { isDark, toggleTheme, lang, setLang, navHomePosition, setNavHomePosition, user, logoutUser } = useTheme();
   const { t } = useI18n();
+  const isGuest = !user;
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
   const theme = isDark ? 'dark' : 'light';
@@ -126,7 +127,11 @@ export default function SettingsScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Profile Card */}
-        <View style={styles.profileCard}>
+        <TouchableOpacity
+          style={styles.profileCard}
+          activeOpacity={isGuest ? 0.7 : 1}
+          onPress={isGuest ? () => navigation.reset({ index: 0, routes: [{ name: 'Login' }] }) : undefined}
+        >
           <View style={styles.avatar}>
             <Svg width={20} height={22} viewBox="0 0 20 22">
               <Circle cx={10} cy={7} r={5} fill={C.cream} />
@@ -134,11 +139,22 @@ export default function SettingsScreen({ navigation }) {
             </Svg>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{t('guest_session')}</Text>
-            <Text style={styles.profileSub}>{t('connect_account')}</Text>
+            {isGuest ? (
+              <>
+                <Text style={styles.profileName}>{t('guest_session')}</Text>
+                <Text style={styles.profileSub}>{t('connect_account')}</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.profileName}>{user.name !== user.email ? user.name : user.email}</Text>
+                {user.name !== user.email && (
+                  <Text style={styles.profileSub}>{user.email}</Text>
+                )}
+              </>
+            )}
           </View>
           <ChevronRight color={C.border} />
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.spacer} />
 
@@ -208,7 +224,7 @@ export default function SettingsScreen({ navigation }) {
         {/* Logout */}
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={() => navigation.replace('Login')}
+          onPress={() => { logoutUser(); navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); }}
         >
           <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
