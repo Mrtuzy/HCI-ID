@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useI18n } from '../context/ThemeContext';
 
 function UnderlineInput({ label, placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
   return (
@@ -42,6 +43,7 @@ const input = StyleSheet.create({
 });
 
 export default function RegisterScreen({ navigation }) {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,26 +59,26 @@ export default function RegisterScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>Hesap oluştur</Text>
-            <Text style={styles.subtitle}>Birkaç saniyede hazır olacaksın</Text>
+            <Text style={styles.title}>{t('register_title')}</Text>
+            <Text style={styles.subtitle}>{t('register_subtitle')}</Text>
           </View>
 
           <View style={styles.form}>
             <UnderlineInput
-              label="AD SOYAD"
-              placeholder="Adın Soyadın"
+              label={t('fullname')}
+              placeholder={t('fullname_placeholder')}
               value={name}
               onChangeText={setName}
             />
             <UnderlineInput
-              label="E-POSTA"
+              label={t('email')}
               placeholder="ad@gmail.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
             />
             <UnderlineInput
-              label="ŞİFRE"
+              label={t('password')}
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
@@ -89,7 +91,7 @@ export default function RegisterScreen({ navigation }) {
             onPress={() => navigation.replace('Main')}
             activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Kayıt ol</Text>
+            <Text style={styles.buttonText}>{t('register_button')}</Text>
           </TouchableOpacity>
 
           <View style={styles.spacer} />
@@ -98,8 +100,8 @@ export default function RegisterScreen({ navigation }) {
             style={styles.loginRow}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.loginText}>Zaten hesabın var mı? </Text>
-            <Text style={styles.loginLink}>Giriş yap</Text>
+            <Text style={styles.loginText}>{t('have_account')}</Text>
+            <Text style={styles.loginLink}>{t('login_button')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -7,15 +7,15 @@ import VerticalSlider from '../components/VerticalSlider';
 import ProfileIcon from '../components/ProfileIcon';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useI18n } from '../context/ThemeContext';
 
 const EQ_BANDS = ['63', '125', '250', '500', '1K', '4K', '16K'];
 
 const PRESETS = [
-  { num: '01', name: 'Bass Boost' },
-  { num: '02', name: 'Vokal' },
-  { num: '03', name: 'Akustik' },
-  { num: '04', name: 'Custom' },
+  { num: '01' },
+  { num: '02' },
+  { num: '03' },
+  { num: '04' },
 ];
 
 const PRESET_VALUES = {
@@ -26,6 +26,7 @@ const PRESET_VALUES = {
 
 export default function EqualizerScreen({ navigation }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
 
@@ -33,7 +34,8 @@ export default function EqualizerScreen({ navigation }) {
   const [activePreset, setActivePreset] = useState(null);
   const [savedCustom, setSavedCustom] = useState(new Array(7).fill(0));
 
-  const activePresetName = PRESETS.find(p => p.num === activePreset)?.name ?? 'Custom';
+  const presetName = (num) => t(`eq_${num}`);
+  const activePresetName = activePreset ? presetName(activePreset) : t('eq_04');
 
   const selectPreset = (num) => {
     setActivePreset(num);
@@ -81,7 +83,7 @@ export default function EqualizerScreen({ navigation }) {
 
         {/* Section label */}
         <View style={styles.titleRow}>
-          <Text style={styles.sectionLabel}>EQUALIZER</Text>
+          <Text style={styles.sectionLabel}>{t('equalizer')}</Text>
           <Text style={styles.screenTitle}>{activePresetName}</Text>
         </View>
 
@@ -103,7 +105,7 @@ export default function EqualizerScreen({ navigation }) {
 
         {/* Presets */}
         <View style={styles.presetsSection}>
-          <Text style={styles.presetsLabel}>PRESETLER</Text>
+          <Text style={styles.presetsLabel}>{t('presets')}</Text>
           {PRESETS.map((p, i) => (
             <View key={p.num}>
               <TouchableOpacity
@@ -112,7 +114,7 @@ export default function EqualizerScreen({ navigation }) {
               >
                 <View style={styles.presetLeft}>
                   <Text style={styles.presetNum}>{p.num}</Text>
-                  <Text style={styles.presetName}>{p.name}</Text>
+                  <Text style={styles.presetName}>{presetName(p.num)}</Text>
                 </View>
                 <Svg width={4} height={8} viewBox="0 0 4 8">
                   <Path d="M0 0l4 4-4 4" stroke={activePreset === p.num ? C.primary : C.border} strokeWidth={1.5} fill="none" />
@@ -126,10 +128,10 @@ export default function EqualizerScreen({ navigation }) {
         {/* Action Buttons — exact Figma: r=22, h=44, w=171 */}
         <View style={styles.btnRow}>
           <TouchableOpacity style={styles.btnFill} onPress={save}>
-            <Text style={styles.btnFillText}>Kaydet</Text>
+            <Text style={styles.btnFillText}>{t('save')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnOutline} onPress={reset}>
-            <Text style={styles.btnOutlineText}>Sıfırla</Text>
+            <Text style={styles.btnOutlineText}>{t('reset')}</Text>
           </TouchableOpacity>
         </View>
       </View>

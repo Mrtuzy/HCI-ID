@@ -5,6 +5,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/
 import { View, ActivityIndicator, Platform } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
 import AppNavigator from './src/navigation/AppNavigator';
+import NotificationOverlay from './src/components/NotificationOverlay';
 import { colors } from './src/theme/colors';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
@@ -20,11 +21,15 @@ function Root() {
   }, []);
 
   return (
-    <NavigationContainer>
-      {/* Hide the top status bar (clock / notifications) inside the app */}
-      <StatusBar hidden />
-      <AppNavigator />
-    </NavigationContainer>
+    <View style={{ flex: 1 }}>
+      <NavigationContainer>
+        {/* Hide the top status bar (clock / notifications) inside the app */}
+        <StatusBar hidden />
+        <AppNavigator />
+      </NavigationContainer>
+      {/* Floating in-app notifications, rendered above every screen */}
+      <NotificationOverlay />
+    </View>
   );
 }
 

@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useI18n } from '../context/ThemeContext';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 export default function SplashScreen({ navigation }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const C = getColors(isDark);
 
   return (
@@ -23,9 +24,9 @@ export default function SplashScreen({ navigation }) {
             onPress={() => navigation.replace('Login')}
             activeOpacity={0.85}
           >
-            <Text style={{ ...typography.btnPrimary, color: C.buttonText }}>Başla</Text>
+            <Text style={{ ...typography.btnPrimary, color: C.buttonText }}>{t('start')}</Text>
           </TouchableOpacity>
-          <Text style={{ ...typography.caption, color: C.secondary }}>Sürüm 1.0</Text>
+          <Text style={{ ...typography.caption, color: C.secondary }}>{t('version')}</Text>
         </View>
       </View>
     </SafeAreaView>

@@ -8,7 +8,7 @@ import ColorWheel, { hslToHex } from '../components/ColorWheel';
 import ProfileIcon from '../components/ProfileIcon';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useI18n } from '../context/ThemeContext';
 
 const MODES = ['Adaptive', 'Pulse', 'Rainbow', 'Static', 'Breathe'];
 
@@ -19,9 +19,9 @@ const PRESET_DATA = {
 };
 
 const PRESETS = [
-  { num: '01', name: 'New preset' },
-  { num: '02', name: 'Gece lambası' },
-  { num: '03', name: 'Parti modu' },
+  { num: '01' },
+  { num: '02' },
+  { num: '03' },
 ];
 
 const TRACK_W = 280;
@@ -76,6 +76,7 @@ const hs = StyleSheet.create({
 
 export default function LightingScreen({ navigation }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
 
@@ -88,7 +89,8 @@ export default function LightingScreen({ navigation }) {
   const [savedNewPreset, setSavedNewPreset] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const activeName = PRESETS.find(p => p.num === activePreset)?.name ?? 'Özel';
+  const presetName = (num) => t(`light_${num}`);
+  const activeName = activePreset ? presetName(activePreset) : t('custom_label');
 
   const applyState = (data) => {
     setColorAngle(data.colorAngle);
@@ -144,7 +146,7 @@ export default function LightingScreen({ navigation }) {
 
         {/* Title */}
         <View style={styles.titleRow}>
-          <Text style={styles.sectionLabel}>LIGHTING</Text>
+          <Text style={styles.sectionLabel}>{t('lighting')}</Text>
           <Text style={styles.screenTitle}>{activeName}</Text>
         </View>
 
@@ -166,12 +168,12 @@ export default function LightingScreen({ navigation }) {
 
         {/* MOD Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>MOD</Text>
+          <Text style={styles.sectionLabel}>{t('mode')}</Text>
           <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setDropdownOpen(!dropdownOpen)}
           >
-            <Text style={styles.dropdownText}>{selectedMode}</Text>
+            <Text style={styles.dropdownText}>{t(`light_mode_${selectedMode}`)}</Text>
             <Svg width={8} height={4} viewBox="0 0 8 4">
               <Path
                 d={dropdownOpen ? 'M0 4L4 0l4 4' : 'M0 0l4 4 4-4'}
@@ -190,7 +192,7 @@ export default function LightingScreen({ navigation }) {
                   style={[styles.dropdownItem, i < MODES.length - 1 && styles.dropdownItemBorder]}
                   onPress={() => { setSelectedMode(m); setDropdownOpen(false); setActivePreset(null); }}
                 >
-                  <Text style={styles.dropdownItemText}>{m}</Text>
+                  <Text style={styles.dropdownItemText}>{t(`light_mode_${m}`)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -200,12 +202,12 @@ export default function LightingScreen({ navigation }) {
         {/* Sliders */}
         <View style={styles.section}>
           <HSlider
-            label="PARLAKLIK"
+            label={t('brightness')}
             value={brightness}
             onChange={(v) => { setBrightness(v); setActivePreset(null); }}
           />
           <HSlider
-            label="HIZ"
+            label={t('speed')}
             value={speed}
             onChange={(v) => { setSpeed(v); setActivePreset(null); }}
           />
@@ -213,7 +215,7 @@ export default function LightingScreen({ navigation }) {
 
         {/* Preset List */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>PRESETLER</Text>
+          <Text style={styles.sectionLabel}>{t('presets')}</Text>
           {PRESETS.map((p, i) => {
             const dotColor = getPresetDotColor(p.num);
             const isActive = activePreset === p.num;
@@ -231,7 +233,7 @@ export default function LightingScreen({ navigation }) {
                       : <View style={[styles.presetDot, styles.presetDotEmpty]} />
                     }
                     <Text style={[styles.presetNum, isDisabled && styles.textDim]}>{p.num}</Text>
-                    <Text style={[styles.presetName, isDisabled && styles.textDim]}>{p.name}</Text>
+                    <Text style={[styles.presetName, isDisabled && styles.textDim]}>{presetName(p.num)}</Text>
                   </View>
                   <Svg width={4} height={8} viewBox="0 0 4 8">
                     <Path
@@ -251,10 +253,10 @@ export default function LightingScreen({ navigation }) {
         {/* Action Buttons */}
         <View style={styles.btnRow}>
           <TouchableOpacity style={styles.btnFill} onPress={save}>
-            <Text style={styles.btnFillText}>Kaydet</Text>
+            <Text style={styles.btnFillText}>{t('save')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnOutline} onPress={reset}>
-            <Text style={styles.btnOutlineText}>Sıfırla</Text>
+            <Text style={styles.btnOutlineText}>{t('reset')}</Text>
           </TouchableOpacity>
         </View>
 

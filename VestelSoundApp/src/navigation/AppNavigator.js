@@ -51,9 +51,23 @@ function LightIcon({ color: c }) {
   );
 }
 
+const TAB_SCREENS = {
+  Home: HomeScreen,
+  Equalizer: EqualizerScreen,
+  Lighting: LightingScreen,
+};
+
+// Tab order driven by the "Navigation bar" setting (Home position).
+const TAB_ORDERS = {
+  center: ['Equalizer', 'Home', 'Lighting'],
+  left: ['Home', 'Equalizer', 'Lighting'],
+  right: ['Equalizer', 'Lighting', 'Home'],
+};
+
 function MainTabs() {
-  const { isDark } = useTheme();
+  const { isDark, navHomePosition } = useTheme();
   const C = getColors(isDark);
+  const order = TAB_ORDERS[navHomePosition] || TAB_ORDERS.center;
 
   return (
     <Tab.Navigator
@@ -76,9 +90,9 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Equalizer" component={EqualizerScreen} />
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Lighting" component={LightingScreen} />
+      {order.map((name) => (
+        <Tab.Screen key={name} name={name} component={TAB_SCREENS[name]} />
+      ))}
     </Tab.Navigator>
   );
 }

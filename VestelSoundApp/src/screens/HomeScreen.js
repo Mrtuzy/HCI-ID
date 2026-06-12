@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ProfileIcon from '../components/ProfileIcon';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useI18n } from '../context/ThemeContext';
 
 const SONGS = [
   {
@@ -57,10 +57,17 @@ function AlbumArt({ song, size = 240 }) {
   );
 }
 
-function AIIcon({ color }) {
+function BellIcon({ color }) {
   return (
-    <Svg width={14} height={15} viewBox="0 0 14 15">
-      <Path d="M12 2L10 7l5-2-5-2zM2 8l4 4-2 2H2v-2L0 10l2-2z" fill={color} />
+    <Svg width={16} height={17} viewBox="0 0 16 17">
+      <Path
+        d="M8 1.2c-2.4 0-4 1.9-4 4.3 0 3.4-1.2 4.5-1.6 4.9-.2.2-.3.5-.2.8.1.3.4.5.7.5h10.2c.3 0 .6-.2.7-.5.1-.3 0-.6-.2-.8-.4-.4-1.6-1.5-1.6-4.9 0-2.4-1.6-4.3-4-4.3z"
+        stroke={color}
+        strokeWidth={1.3}
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <Path d="M6.5 14c.3.7 1 1.1 1.5 1.1s1.2-.4 1.5-1.1" stroke={color} strokeWidth={1.3} fill="none" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -151,7 +158,8 @@ const prog = StyleSheet.create({
 });
 
 export default function HomeScreen({ navigation }) {
-  const { isDark } = useTheme();
+  const { isDark, showNotifications } = useTheme();
+  const { t } = useI18n();
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
 
@@ -169,42 +177,43 @@ export default function HomeScreen({ navigation }) {
   const shuffleRef = useRef(false);
   const repeatRef = useRef(0);
   const songIdxRef = useRef(0);
+  const progressRef = useRef(0);
   useEffect(() => { shuffleRef.current = isShuffle; }, [isShuffle]);
   useEffect(() => { repeatRef.current = repeatMode; }, [repeatMode]);
   useEffect(() => { songIdxRef.current = currentSong; }, [currentSong]);
+  useEffect(() => { progressRef.current = progress; }, [progress]);
 
   const song = SONGS[currentSong];
   const isLiked = likedSongs.has(song.id);
 
-  // Auto-advance progress while playing
+  // Auto-advance progress while playing. All state transitions happen directly
+  // in the interval (never inside a setState updater) to avoid update cascades.
   useEffect(() => {
     if (!isPlaying) return;
     const tick = 1 / (song.durationSecs * 2);
     const id = setInterval(() => {
-      setProgress(p => {
-        if (p + tick >= 1) {
-          // Schedule song-end logic outside of state setter
-          setTimeout(() => {
-            const mode = repeatRef.current;
-            const shuffle = shuffleRef.current;
-            const idx = songIdxRef.current;
-            if (mode === 2) {
-              setProgress(0);
-            } else {
-              const next = shuffle
-                ? Math.floor(Math.random() * SONGS.length)
-                : (idx + 1) % SONGS.length;
-              setCurrentSong(next);
-              setProgress(0);
-              if (mode === 0 && idx === SONGS.length - 1 && !shuffle) {
-                setIsPlaying(false);
-              }
-            }
-          }, 0);
-          return 1;
-        }
-        return p + tick;
-      });
+      const next = progressRef.current + tick;
+      if (next < 1) {
+        progressRef.current = next;
+        setProgress(next);
+        return;
+      }
+      // Reached the end of the track.
+      const mode = repeatRef.current;
+      const shuffle = shuffleRef.current;
+      const idx = songIdxRef.current;
+      progressRef.current = 0;
+      setProgress(0);
+      if (mode === 2) return; // repeat one: just restart
+      const isLast = idx === SONGS.length - 1;
+      if (mode === 0 && isLast && !shuffle) {
+        setIsPlaying(false);
+        return;
+      }
+      const nextIdx = shuffle
+        ? Math.floor(Math.random() * SONGS.length)
+        : (idx + 1) % SONGS.length;
+      setCurrentSong(nextIdx);
     }, 500);
     return () => clearInterval(id);
   }, [isPlaying, currentSong]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -247,7 +256,9 @@ export default function HomeScreen({ navigation }) {
 
         {/* Top Bar */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconBtn}><AIIcon color={C.primary} /></TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={showNotifications}>
+            <BellIcon color={C.primary} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
             <ProfileIcon color={C.primary} size={28} />
           </TouchableOpacity>
@@ -255,7 +266,7 @@ export default function HomeScreen({ navigation }) {
 
         {/* Speaker Info */}
         <View style={styles.speakerInfo}>
-          <Text style={styles.connectedLabel}>CONNECTED</Text>
+          <Text style={styles.connectedLabel}>{t('connected')}</Text>
           <Text style={styles.speakerName}>Vestel Aura Speaker</Text>
         </View>
 
@@ -312,7 +323,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.knobValue}>{Math.round(battery)}</Text>
               <Text style={styles.knobUnit}>%</Text>
             </View>
-            <Text style={styles.batteryLabel}>Battery Level</Text>
+            <Text style={styles.batteryLabel}>{t('battery_level')}</Text>
           </View>
 
           <View style={styles.volumeSliderRow}>
@@ -336,7 +347,7 @@ export default function HomeScreen({ navigation }) {
 
             {/* Header */}
             <View style={panel.header}>
-              <Text style={panel.headerTitle}>NOW PLAYING</Text>
+              <Text style={panel.headerTitle}>{t('now_playing')}</Text>
               <TouchableOpacity
                 onPress={() => setShowPlayer(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -420,7 +431,7 @@ export default function HomeScreen({ navigation }) {
             </View>
 
             {/* Queue */}
-            <Text style={panel.queueLabel}>QUEUE</Text>
+            <Text style={panel.queueLabel}>{t('queue')}</Text>
             <ScrollView style={panel.songList} showsVerticalScrollIndicator={false}>
               {SONGS.map((s, i) => (
                 <TouchableOpacity

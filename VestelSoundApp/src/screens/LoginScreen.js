@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
+import { useI18n } from '../context/ThemeContext';
 
 function UnderlineInput({ label, placeholder, value, onChangeText, secureTextEntry, keyboardType }) {
   return (
@@ -50,6 +51,7 @@ const input = StyleSheet.create({
 });
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -65,21 +67,21 @@ export default function LoginScreen({ navigation }) {
         >
           {/* Title */}
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>Hoş geldin</Text>
-            <Text style={styles.subtitle}>Bağlan veya misafir olarak devam et</Text>
+            <Text style={styles.title}>{t('login_welcome')}</Text>
+            <Text style={styles.subtitle}>{t('login_subtitle')}</Text>
           </View>
 
           {/* Inputs */}
           <View style={styles.form}>
             <UnderlineInput
-              label="E-POSTA"
+              label={t('email')}
               placeholder="ad@gmail.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
             />
             <UnderlineInput
-              label="ŞİFRE"
+              label={t('password')}
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
@@ -93,7 +95,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => navigation.replace('Main')}
             activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Giriş yap</Text>
+            <Text style={styles.buttonText}>{t('login_button')}</Text>
           </TouchableOpacity>
 
           <View style={styles.spacer} />
@@ -103,7 +105,7 @@ export default function LoginScreen({ navigation }) {
             style={styles.registerRow}
             onPress={() => navigation.navigate('Register')}
           >
-            <Text style={styles.registerText}>Hesap oluştur</Text>
+            <Text style={styles.registerText}>{t('create_account')}</Text>
           </TouchableOpacity>
         </ScrollView>
 

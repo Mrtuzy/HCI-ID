@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Modal,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { getColors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useI18n } from '../context/ThemeContext';
 
 function ChevronRight({ color }) {
   return (
@@ -29,13 +29,11 @@ function SettingRow({ label, value, C, onPress }) {
   );
 }
 
-// Tapping a row advances to the next option in its list.
-const cycle = (list, current) => list[(list.indexOf(current) + 1) % list.length];
-
-const DIL_OPTIONS = ['Türkçe', 'English', 'Deutsch'];
-const NAV_OPTIONS = ['Alt', 'Üst'];
-const SES_OPTIONS = ['50%', '60%', '70%', '80%', '90%', '100%'];
-const SAAT_OPTIONS = ['22:00 - 08:00', '23:00 - 07:00', '00:00 - 06:00', 'Kapalı'];
+const SES_OPTIONS = ['10%', '20%', '30%', '40%', '50%', '60%'];
+const SAAT_OPTIONS = [
+  '21.00 - 07.00', '21.00 - 08.00', '22.00 - 07.00',
+  '22.00 - 08.00', '23.00 - 07.00', '23.00 - 08.00',
+];
 
 const row = StyleSheet.create({
   container: {
@@ -50,7 +48,8 @@ const row = StyleSheet.create({
 });
 
 export default function SettingsScreen({ navigation }) {
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark, toggleTheme, lang, setLang, navHomePosition, setNavHomePosition } = useTheme();
+  const { t } = useI18n();
   const C = getColors(isDark);
   const styles = useMemo(() => makeStyles(C), [isDark]);
   const theme = isDark ? 'dark' : 'light';
@@ -59,10 +58,57 @@ export default function SettingsScreen({ navigation }) {
     if (next !== theme) toggleTheme();
   };
 
-  const [dil, setDil] = useState('Türkçe');
-  const [navBar, setNavBar] = useState('Alt');
   const [sesLimiti, setSesLimiti] = useState('50%');
-  const [saatAraligi, setSaatAraligi] = useState('22:00 - 08:00');
+  const [saatAraligi, setSaatAraligi] = useState('22.00 - 08.00');
+  const [activeMenu, setActiveMenu] = useState(null); // 'language' | 'nav' | 'volume' | 'time'
+
+  // Display values for the rows
+  const langLabel = lang === 'tr' ? t('lang_option_tr') : t('lang_option_en');
+  const navLabel = t(
+    navHomePosition === 'left' ? 'nav_left' : navHomePosition === 'right' ? 'nav_right' : 'nav_center'
+  );
+
+  // Config for the option sub-menu. Selecting an option applies it and closes.
+  const MENUS = {
+    language: {
+      title: t('language'),
+      options: [
+        { key: 'tr', label: t('lang_option_tr') },
+        { key: 'en', label: t('lang_option_en') },
+      ],
+      current: lang,
+      onSelect: (k) => setLang(k),
+    },
+    nav: {
+      title: t('nav_bar'),
+      options: [
+        { key: 'center', label: t('nav_center') },
+        { key: 'left', label: t('nav_left') },
+        { key: 'right', label: t('nav_right') },
+      ],
+      current: navHomePosition,
+      onSelect: (k) => setNavHomePosition(k),
+    },
+    volume: {
+      title: t('volume_limit'),
+      options: SES_OPTIONS.map((o) => ({ key: o, label: o })),
+      current: sesLimiti,
+      onSelect: (k) => setSesLimiti(k),
+    },
+    time: {
+      title: t('time_range'),
+      options: SAAT_OPTIONS.map((o) => ({ key: o, label: o })),
+      current: saatAraligi,
+      onSelect: (k) => setSaatAraligi(k),
+    },
+  };
+
+  const menu = activeMenu ? MENUS[activeMenu] : null;
+
+  const handleSelect = (key) => {
+    if (menu) menu.onSelect(key);
+    setActiveMenu(null);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -73,7 +119,7 @@ export default function SettingsScreen({ navigation }) {
             <Path d="M7 0L0 7l7 7" stroke={C.primary} strokeWidth={1.5} fill="none" />
           </Svg>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ayarlar</Text>
+        <Text style={styles.headerTitle}>{t('settings')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -88,43 +134,43 @@ export default function SettingsScreen({ navigation }) {
             </Svg>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Misafir oturumu</Text>
-            <Text style={styles.profileSub}>Hesabını bağla</Text>
+            <Text style={styles.profileName}>{t('guest_session')}</Text>
+            <Text style={styles.profileSub}>{t('connect_account')}</Text>
           </View>
           <ChevronRight color={C.border} />
         </View>
 
         <View style={styles.spacer} />
 
-        {/* GENEL */}
-        <Text style={styles.sectionLabel}>GENEL</Text>
+        {/* GENERAL */}
+        <Text style={styles.sectionLabel}>{t('general')}</Text>
         <View style={styles.sectionBlock}>
           <SettingRow
-            label="Dil"
-            value={dil}
+            label={t('language')}
+            value={langLabel}
             C={C}
-            onPress={() => setDil(d => cycle(DIL_OPTIONS, d))}
+            onPress={() => setActiveMenu('language')}
           />
           <View style={styles.divider} />
           <SettingRow
-            label="Navigasyon çubuğu"
-            value={navBar}
+            label={t('nav_bar')}
+            value={navLabel}
             C={C}
-            onPress={() => setNavBar(n => cycle(NAV_OPTIONS, n))}
+            onPress={() => setActiveMenu('nav')}
           />
         </View>
 
         <View style={styles.spacer} />
 
-        {/* GÖRÜNÜM */}
-        <Text style={styles.sectionLabel}>GÖRÜNÜM</Text>
+        {/* APPEARANCE */}
+        <Text style={styles.sectionLabel}>{t('appearance')}</Text>
         <View style={styles.themeToggle}>
           <TouchableOpacity
             style={[styles.themeBtn, theme === 'light' && styles.themeBtnActive]}
             onPress={() => setTheme('light')}
           >
             <Text style={[styles.themeBtnText, theme === 'light' && styles.themeBtnTextActive]}>
-              Açık
+              {t('light_theme')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -132,28 +178,28 @@ export default function SettingsScreen({ navigation }) {
             onPress={() => setTheme('dark')}
           >
             <Text style={[styles.themeBtnText, theme === 'dark' && styles.themeBtnTextActive]}>
-              Koyu
+              {t('dark_theme')}
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.spacer} />
 
-        {/* GECE MODU */}
-        <Text style={styles.sectionLabel}>GECE MODU</Text>
+        {/* NIGHT MODE */}
+        <Text style={styles.sectionLabel}>{t('night_mode')}</Text>
         <View style={styles.sectionBlock}>
           <SettingRow
-            label="Ses limiti"
+            label={t('volume_limit')}
             value={sesLimiti}
             C={C}
-            onPress={() => setSesLimiti(s => cycle(SES_OPTIONS, s))}
+            onPress={() => setActiveMenu('volume')}
           />
           <View style={styles.divider} />
           <SettingRow
-            label="Saat aralığı"
+            label={t('time_range')}
             value={saatAraligi}
             C={C}
-            onPress={() => setSaatAraligi(s => cycle(SAAT_OPTIONS, s))}
+            onPress={() => setActiveMenu('time')}
           />
         </View>
 
@@ -164,10 +210,62 @@ export default function SettingsScreen({ navigation }) {
           style={styles.logoutBtn}
           onPress={() => navigation.replace('Login')}
         >
-          <Text style={styles.logoutText}>Oturumu kapat</Text>
+          <Text style={styles.logoutText}>{t('logout')}</Text>
         </TouchableOpacity>
 
       </ScrollView>
+
+      {/* Option sub-menu */}
+      <Modal
+        visible={!!menu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setActiveMenu(null)}
+      >
+        <View style={styles.menuOverlay}>
+          <TouchableOpacity
+            style={styles.menuBackdrop}
+            activeOpacity={1}
+            onPress={() => setActiveMenu(null)}
+          />
+          <SafeAreaView style={styles.menuSheet}>
+            <View style={styles.menuHeader}>
+              <TouchableOpacity style={styles.backBtn} onPress={() => setActiveMenu(null)}>
+                <Svg width={7} height={14} viewBox="0 0 7 14">
+                  <Path d="M7 0L0 7l7 7" stroke={C.primary} strokeWidth={1.5} fill="none" />
+                </Svg>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>{t('settings')}</Text>
+              <View style={{ width: 28 }} />
+            </View>
+
+            <ScrollView contentContainerStyle={styles.menuContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.sectionLabel}>{menu ? menu.title.toUpperCase() : ''}</Text>
+              <View style={styles.menuDividerTop} />
+              {menu && menu.options.map((opt) => {
+                const selected = opt.key === menu.current;
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={styles.menuItem}
+                    onPress={() => handleSelect(opt.key)}
+                    activeOpacity={0.6}
+                  >
+                    <Text style={[styles.menuItemText, { color: selected ? C.primary : C.secondary }]}>
+                      {opt.label}
+                    </Text>
+                    {selected && (
+                      <Svg width={14} height={11} viewBox="0 0 14 11">
+                        <Path d="M1 5.5L5 9.5L13 1.5" stroke={C.primary} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </Svg>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -275,5 +373,44 @@ const makeStyles = (C) => StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 14,
     color: C.coral,
+  },
+
+  // Sub-menu
+  menuOverlay: { flex: 1 },
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  menuSheet: {
+    flex: 1,
+    backgroundColor: C.cream,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  menuContent: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+  },
+  menuDividerTop: {
+    height: 1,
+    backgroundColor: C.border,
+    marginBottom: 6,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 18,
+  },
+  menuItemText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
   },
 });
