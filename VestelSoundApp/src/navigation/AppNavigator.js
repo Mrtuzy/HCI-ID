@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Svg, { Rect, Path, Circle } from 'react-native-svg';
+import Svg, { Rect, Path } from 'react-native-svg';
 
 import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -11,12 +11,13 @@ import EqualizerScreen from '../screens/EqualizerScreen';
 import LightingScreen from '../screens/LightingScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
-import { colors } from '../theme/colors';
+import WatchScreen from '../screens/WatchScreen';
+import { useTheme } from '../context/ThemeContext';
+import { getColors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Custom EQ bars icon (from Figma vectors: 3x11, 3x16, 3x14, 3x18)
 function EQIcon({ color: c }) {
   return (
     <Svg width={22} height={20} viewBox="0 0 22 20">
@@ -28,19 +29,14 @@ function EQIcon({ color: c }) {
   );
 }
 
-// Home icon
 function HomeIcon({ color: c }) {
   return (
     <Svg width={22} height={20} viewBox="0 0 22 20">
-      <Path
-        d="M11 2L2 9v10h6v-6h6v6h6V9L11 2z"
-        fill={c}
-      />
+      <Path d="M11 2L2 9v10h6v-6h6v6h6V9L11 2z" fill={c} />
     </Svg>
   );
 }
 
-// Lighting icon (bulb shape)
 function LightIcon({ color: c }) {
   return (
     <Svg width={20} height={22} viewBox="0 0 20 22">
@@ -55,29 +51,32 @@ function LightIcon({ color: c }) {
 }
 
 function MainTabs() {
+  const { isDark } = useTheme();
+  const C = getColors(isDark);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: colors.cream,
+          backgroundColor: C.cream,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: C.border,
           height: 84,
           paddingBottom: 20,
           paddingTop: 16,
         },
         tabBarIcon: ({ focused }) => {
-          const c = focused ? colors.primary : colors.iconInactive;
+          const c = focused ? C.primary : C.iconInactive;
           if (route.name === 'Home') return <HomeIcon color={c} />;
           if (route.name === 'Equalizer') return <EQIcon color={c} />;
           if (route.name === 'Lighting') return <LightIcon color={c} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Equalizer" component={EqualizerScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Lighting" component={LightingScreen} />
     </Tab.Navigator>
   );
@@ -93,6 +92,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="NowPlaying"
         component={NowPlayingScreen}
+        options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="Watch"
+        component={WatchScreen}
         options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
       />
     </Stack.Navigator>

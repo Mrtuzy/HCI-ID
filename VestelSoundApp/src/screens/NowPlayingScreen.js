@@ -1,313 +1,346 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Animated,
+  View, Text, TouchableOpacity, StyleSheet,
+  SafeAreaView, StatusBar, PanResponder,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+
+const DARK = {
+  bg: '#0A0A0A',
+  card: '#1E1B18',
+  text: '#F2EDE4',
+  dim: '#8C857A',
+};
+
+const TOTAL_SEC = 180;
+
+function formatTime(pct) {
+  const sec = Math.floor(pct * TOTAL_SEC);
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+}
+
+function ProgressBar({ progress, onChange }) {
+  const trackW = useRef(0);
+  const startP = useRef(progress);
+  const currP = useRef(progress);
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (e) => {
+      if (trackW.current > 0) {
+        const tap = Math.max(0, Math.min(1, e.nativeEvent.locationX / trackW.current));
+        currP.current = tap;
+        startP.current = tap;
+        onChange(tap);
+      } else {
+        startP.current = currP.current;
+      }
+    },
+    onPanResponderMove: (_, g) => {
+      if (!trackW.current) return;
+      const next = Math.max(0, Math.min(1, startP.current + g.dx / trackW.current));
+      currP.current = next;
+      onChange(next);
+    },
+  })).current;
+
+  return (
+    <View style={s.progressSection}>
+      <View
+        style={s.progressTrack}
+        onLayout={e => { trackW.current = e.nativeEvent.layout.width; }}
+        {...pan.panHandlers}
+      >
+        <View style={s.progressBg} />
+        <View style={[s.progressFill, { width: `${progress * 100}%` }]} />
+        <View style={[s.progressThumb, { left: `${progress * 100}%` }]} />
+      </View>
+      <View style={s.timeRow}>
+        <Text style={s.timeText}>{formatTime(progress)}</Text>
+        <Text style={s.timeText}>3:00</Text>
+      </View>
+    </View>
+  );
+}
+
+function VolumeBar({ value, onChange }) {
+  const trackW = useRef(0);
+  const startV = useRef(value);
+  const currV = useRef(value);
+
+  const pan = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (e) => {
+      if (trackW.current > 0) {
+        const tap = Math.max(0, Math.min(100, (e.nativeEvent.locationX / trackW.current) * 100));
+        currV.current = tap;
+        startV.current = tap;
+        onChange(tap);
+      } else {
+        startV.current = currV.current;
+      }
+    },
+    onPanResponderMove: (_, g) => {
+      if (!trackW.current) return;
+      const next = Math.max(0, Math.min(100, startV.current + (g.dx / trackW.current) * 100));
+      currV.current = next;
+      onChange(next);
+    },
+  })).current;
+
+  return (
+    <View style={s.volumeSection}>
+      <Svg width={16} height={12} viewBox="0 0 16 12">
+        <Path d="M0 4h4l4-4v12l-4-4H0V4z" fill={DARK.dim} />
+      </Svg>
+      <View
+        style={s.volumeTrack}
+        onLayout={e => { trackW.current = e.nativeEvent.layout.width; }}
+        {...pan.panHandlers}
+      >
+        <View style={s.volumeBg} />
+        <View style={[s.volumeFill, { width: `${value}%` }]} />
+        <View style={[s.volumeThumb, { left: `${value}%` }]} />
+      </View>
+      <Svg width={20} height={14} viewBox="0 0 20 14">
+        <Path d="M0 4h4l4-4v14l-4-4H0V4z" fill={DARK.dim} />
+        <Path d="M12 2c2.5 1.5 3 4.5 2 7" stroke={DARK.dim} strokeWidth={1.5} fill="none" strokeLinecap="round" />
+        <Path d="M15 0c3.5 2.5 4 7 2 11" stroke={DARK.dim} strokeWidth={1.5} fill="none" strokeLinecap="round" />
+      </Svg>
+    </View>
+  );
+}
 
 export default function NowPlayingScreen({ navigation }) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0.35);
-  const [currentTime, setCurrentTime] = useState('');
-  const progressAnim = useRef(new Animated.Value(0.35)).current;
+  const [volume, setVolume] = useState(60);
+  const [clock, setClock] = useState('');
+  const progressRef = useRef(0.35);
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      setCurrentTime(`${h}:${m}`);
+    const tick = () => {
+      const n = new Date();
+      setClock(`${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`);
     };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
-    let interval;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setProgress((p) => {
-          const next = Math.min(1, p + 0.001);
-          progressAnim.setValue(next);
-          return next;
-        });
-      }, 500);
-    }
-    return () => clearInterval(interval);
+    if (!isPlaying) return;
+    const id = setInterval(() => {
+      const next = Math.min(1, progressRef.current + 1 / TOTAL_SEC);
+      progressRef.current = next;
+      setProgress(next);
+    }, 1000);
+    return () => clearInterval(id);
   }, [isPlaying]);
 
+  const handleProgressChange = (v) => {
+    progressRef.current = v;
+    setProgress(v);
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={s.safe}>
       <StatusBar barStyle="light-content" />
 
-      {/* Close Button */}
-      <TouchableOpacity
-        style={styles.closeBtn}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="chevron-down" size={24} color={colors.darkText} />
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={s.header}>
+        <TouchableOpacity style={s.closeBtn} onPress={() => navigation.goBack()}>
+          <Svg width={14} height={9} viewBox="0 0 14 9">
+            <Path d="M1 1.5l6 6 6-6" stroke={DARK.text} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          </Svg>
+        </TouchableOpacity>
+        <Text style={s.label}>VESTEL MÜZİK</Text>
+        <View style={{ width: 36 }} />
+      </View>
 
-      {/* Header Label */}
-      <Text style={styles.screenLabel}>Vestel Müzik</Text>
-
-      {/* Big Clock */}
-      <View style={styles.clockSection}>
-        <Text style={styles.clock}>{currentTime || '00:00'}</Text>
-        <View style={styles.clockDeco} />
+      {/* Clock */}
+      <View style={s.clockSection}>
+        <Text style={s.clock}>{clock || '00:00'}</Text>
+        <View style={s.clockLine} />
       </View>
 
       {/* Track Info */}
-      <View style={styles.trackInfo}>
-        <View style={styles.artworkContainer}>
-          <View style={styles.artwork}>
-            <Ionicons name="musical-note" size={28} color={colors.darkSubText} />
-          </View>
+      <View style={s.trackInfo}>
+        <View style={s.artwork}>
+          <Svg width={26} height={26} viewBox="0 0 26 26">
+            <Circle cx={13} cy={13} r={11} stroke={DARK.dim} strokeWidth={1.5} fill="none" />
+            <Circle cx={13} cy={13} r={4} fill={DARK.dim} />
+            <Path d="M11 8v10l8-5-8-5z" fill={DARK.dim} />
+          </Svg>
         </View>
-        <View style={styles.trackMeta}>
-          <Text style={styles.trackTitle}>Bluetooth Akışı</Text>
-          <Text style={styles.trackArtist}>Vestel Home Speaker</Text>
+        <View style={s.trackMeta}>
+          <Text style={s.trackTitle}>Bluetooth Akışı</Text>
+          <Text style={s.trackArtist}>Vestel Home Speaker</Text>
         </View>
-        <TouchableOpacity>
-          <Ionicons name="heart-outline" size={22} color={colors.darkSubText} />
+        <TouchableOpacity style={s.heartBtn}>
+          <Svg width={22} height={20} viewBox="0 0 22 20">
+            <Path
+              d="M11 18.5C5.5 14.5 1 10.8 1 6.8A5.1 5.1 0 0111 4a5.1 5.1 0 0110 2.8c0 4-4.5 7.7-10 11.7z"
+              stroke={DARK.dim} strokeWidth={1.5} fill="none"
+            />
+          </Svg>
         </TouchableOpacity>
       </View>
 
-      {/* Progress Bar */}
-      <View style={styles.progressSection}>
-        <View style={styles.progressTrack}>
-          <Animated.View
-            style={[
-              styles.progressFill,
-              { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
-            ]}
-          />
-          <Animated.View
-            style={[
-              styles.progressThumb,
-              { left: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
-            ]}
-          />
-        </View>
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>
-            {Math.floor(progress * 3 * 60 / 60)}:{String(Math.floor(progress * 3 * 60) % 60).padStart(2, '0')}
-          </Text>
-          <Text style={styles.timeText}>3:00</Text>
-        </View>
-      </View>
+      {/* Progress */}
+      <ProgressBar progress={progress} onChange={handleProgressChange} />
 
       {/* Controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.controlBtn}>
-          <Ionicons name="shuffle-outline" size={20} color={colors.darkSubText} />
+      <View style={s.controls}>
+        {/* Shuffle */}
+        <TouchableOpacity style={s.ctrlBtn}>
+          <Svg width={22} height={16} viewBox="0 0 22 16">
+            <Path d="M1 1h4l11 14h4M16 1h4l-6 7" stroke={DARK.dim} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+            <Path d="M1 15h4l3-4" stroke={DARK.dim} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+          </Svg>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlBtn}>
-          <Ionicons name="play-skip-back" size={26} color={colors.darkText} />
+        {/* Prev */}
+        <TouchableOpacity style={s.ctrlBtn} onPress={() => { progressRef.current = 0; setProgress(0); }}>
+          <Svg width={26} height={22} viewBox="0 0 26 22">
+            <Path d="M22 1L8 11l14 10V1z" fill={DARK.text} />
+            <Rect x={3} y={1} width={3} height={20} rx={1.5} fill={DARK.text} />
+          </Svg>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.playBtn}
-          onPress={() => setIsPlaying(!isPlaying)}
-        >
-          <Ionicons
-            name={isPlaying ? 'pause' : 'play'}
-            size={30}
-            color={colors.darkBg}
-          />
+        {/* Play/Pause */}
+        <TouchableOpacity style={s.playBtn} onPress={() => setIsPlaying(p => !p)}>
+          <Svg width={30} height={30} viewBox="0 0 30 30">
+            {isPlaying ? (
+              <>
+                <Rect x={8} y={7} width={4.5} height={16} rx={2} fill={DARK.bg} />
+                <Rect x={17.5} y={7} width={4.5} height={16} rx={2} fill={DARK.bg} />
+              </>
+            ) : (
+              <Path d="M9 5v20l17-10L9 5z" fill={DARK.bg} />
+            )}
+          </Svg>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlBtn}>
-          <Ionicons name="play-skip-forward" size={26} color={colors.darkText} />
+        {/* Next */}
+        <TouchableOpacity style={s.ctrlBtn} onPress={() => { progressRef.current = 0; setProgress(0); }}>
+          <Svg width={26} height={22} viewBox="0 0 26 22">
+            <Path d="M4 1l14 10L4 21V1z" fill={DARK.text} />
+            <Rect x={20} y={1} width={3} height={20} rx={1.5} fill={DARK.text} />
+          </Svg>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlBtn}>
-          <Ionicons name="repeat-outline" size={20} color={colors.darkSubText} />
+        {/* Repeat */}
+        <TouchableOpacity style={s.ctrlBtn}>
+          <Svg width={22} height={18} viewBox="0 0 22 18">
+            <Path d="M4 4h14a3 3 0 013 3v4a3 3 0 01-3 3H4" stroke={DARK.dim} strokeWidth={1.5} fill="none" strokeLinecap="round" />
+            <Path d="M7 1L4 4l3 3" stroke={DARK.dim} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+          </Svg>
         </TouchableOpacity>
       </View>
 
       {/* Volume */}
-      <View style={styles.volumeSection}>
-        <Ionicons name="volume-low-outline" size={18} color={colors.darkSubText} />
-        <View style={styles.volumeTrack}>
-          <View style={styles.volumeFill} />
-          <View style={styles.volumeThumb} />
-        </View>
-        <Ionicons name="volume-high-outline" size={18} color={colors.darkSubText} />
-      </View>
+      <VolumeBar value={volume} onChange={setVolume} />
 
-      {/* Bottom actions */}
-      <View style={styles.bottomActions}>
-        <TouchableOpacity>
-          <Ionicons name="share-outline" size={22} color={colors.darkSubText} />
+      {/* Bottom row */}
+      <View style={s.bottomRow}>
+        <TouchableOpacity style={s.ctrlBtn}>
+          <Svg width={20} height={20} viewBox="0 0 20 20">
+            <Circle cx={16} cy={4} r={3} stroke={DARK.dim} strokeWidth={1.5} fill="none" />
+            <Circle cx={16} cy={16} r={3} stroke={DARK.dim} strokeWidth={1.5} fill="none" />
+            <Circle cx={4} cy={10} r={3} stroke={DARK.dim} strokeWidth={1.5} fill="none" />
+            <Path d="M13.5 5.5l-7.5 3.5M6 11l7.5 3.5" stroke={DARK.dim} strokeWidth={1.2} />
+          </Svg>
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="list-outline" size={22} color={colors.darkSubText} />
+        <TouchableOpacity style={s.ctrlBtn}>
+          <Svg width={20} height={18} viewBox="0 0 20 18">
+            <Rect x={1} y={1} width={18} height={16} rx={3} stroke={DARK.dim} strokeWidth={1.5} fill="none" />
+            <Path d="M5 6h10M5 9h7M5 12h8" stroke={DARK.dim} strokeWidth={1.2} strokeLinecap="round" />
+          </Svg>
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={22} color={colors.darkSubText} />
+        <TouchableOpacity style={s.ctrlBtn}>
+          <Svg width={20} height={4} viewBox="0 0 20 4">
+            <Circle cx={2} cy={2} r={2} fill={DARK.dim} />
+            <Circle cx={10} cy={2} r={2} fill={DARK.dim} />
+            <Circle cx={18} cy={2} r={2} fill={DARK.dim} />
+          </Svg>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.darkBg,
-    paddingHorizontal: 28,
+const s = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: DARK.bg, paddingHorizontal: 28 },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: 8, marginBottom: 4,
   },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
+  closeBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  label: {
+    fontFamily: 'Inter_500Medium', fontSize: 11,
+    color: DARK.dim, letterSpacing: 2, textTransform: 'uppercase',
   },
-  screenLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.darkSubText,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  clockSection: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 32,
-  },
-  clock: {
-    fontSize: 72,
-    fontWeight: '100',
-    color: colors.darkText,
-    letterSpacing: -2,
-  },
-  clockDeco: {
-    width: 40,
-    height: 1,
-    backgroundColor: colors.darkSubText,
-    marginTop: 12,
-    opacity: 0.4,
-  },
-  trackInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  artworkContainer: { marginRight: 14 },
+  clockSection: { alignItems: 'center', marginTop: 18, marginBottom: 24 },
+  clock: { fontFamily: 'Inter_400Regular', fontSize: 68, color: DARK.text, letterSpacing: -2 },
+  clockLine: { width: 40, height: 1, backgroundColor: DARK.dim, marginTop: 10, opacity: 0.4 },
+  trackInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: 22 },
   artwork: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    backgroundColor: colors.darkCard,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 52, height: 52, borderRadius: 12,
+    backgroundColor: DARK.card, justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   trackMeta: { flex: 1 },
-  trackTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.darkText,
-    marginBottom: 3,
-  },
-  trackArtist: {
-    fontSize: 12,
-    color: colors.darkSubText,
-  },
-  progressSection: { marginBottom: 32 },
+  trackTitle: { fontFamily: 'Inter_500Medium', fontSize: 16, color: DARK.text, marginBottom: 3 },
+  trackArtist: { fontFamily: 'Inter_400Regular', fontSize: 12, color: DARK.dim },
+  heartBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+
+  progressSection: { marginBottom: 24 },
   progressTrack: {
-    height: 3,
-    backgroundColor: colors.darkCard,
-    borderRadius: 2,
-    marginBottom: 10,
-    position: 'relative',
+    height: 22, justifyContent: 'center', position: 'relative',
+  },
+  progressBg: {
+    position: 'absolute', left: 0, right: 0, height: 3,
+    backgroundColor: DARK.card, borderRadius: 2,
   },
   progressFill: {
-    height: 3,
-    backgroundColor: colors.darkText,
-    borderRadius: 2,
+    position: 'absolute', left: 0, height: 3,
+    backgroundColor: DARK.text, borderRadius: 2,
   },
   progressThumb: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.darkText,
-    top: -4.5,
-    marginLeft: -6,
+    position: 'absolute', width: 14, height: 14, borderRadius: 7,
+    backgroundColor: DARK.text, marginLeft: -7, top: 4,
   },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  timeText: {
-    fontSize: 11,
-    color: colors.darkSubText,
-  },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  timeText: { fontFamily: 'Inter_400Regular', fontSize: 11, color: DARK.dim },
+
   controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 32,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 24,
   },
-  controlBtn: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  ctrlBtn: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.darkText,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 66, height: 66, borderRadius: 33,
+    backgroundColor: DARK.text, justifyContent: 'center', alignItems: 'center',
   },
+
   volumeSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 32,
+    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24,
   },
-  volumeTrack: {
-    flex: 1,
-    height: 3,
-    backgroundColor: colors.darkCard,
-    borderRadius: 2,
-    position: 'relative',
+  volumeTrack: { flex: 1, height: 22, justifyContent: 'center', position: 'relative' },
+  volumeBg: {
+    position: 'absolute', left: 0, right: 0, height: 3,
+    backgroundColor: DARK.card, borderRadius: 2,
   },
   volumeFill: {
-    width: '60%',
-    height: 3,
-    backgroundColor: colors.darkText,
-    borderRadius: 2,
-    opacity: 0.6,
+    position: 'absolute', left: 0, height: 3,
+    backgroundColor: DARK.text, borderRadius: 2, opacity: 0.7,
   },
   volumeThumb: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.darkText,
-    top: -4.5,
-    left: '60%',
-    marginLeft: -6,
+    position: 'absolute', width: 14, height: 14, borderRadius: 7,
+    backgroundColor: DARK.text, marginLeft: -7, top: 4,
   },
-  bottomActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
+
+  bottomRow: { flexDirection: 'row', justifyContent: 'space-around' },
 });

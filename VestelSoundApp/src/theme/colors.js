@@ -1,26 +1,33 @@
-// Exact values from Figma Design System
 export const colors = {
-  // Surfaces
-  cream: '#F2EDE4',       // surface/cream — background
-  white: '#FFFFFF',       // surface/raised — cards
-
-  // Ink
-  primary: '#1C1817',     // ink/primary — main text, buttons
-  secondary: '#6E665C',   // ink/secondary — labels, captions
-
-  // Border
-  border: '#C9C0AF',      // border/subtle
-
-  // Accent
-  coral: '#B5562B',       // accent/coral — destructive, accent
-
-  // Icon states
+  cream: '#F2EDE4',
+  white: '#FFFFFF',
+  primary: '#1C1817',
+  secondary: '#6E665C',
+  border: '#C9C0AF',
+  coral: '#B5562B',
   iconInactive: '#A89E8C',
-
-  // Aliases
   background: '#F2EDE4',
   text: '#1C1817',
   textSecondary: '#6E665C',
   buttonBg: '#1C1817',
   buttonText: '#F2EDE4',
 };
+
+const darkColors = {
+  cream: '#1C1817',
+  white: '#2A2420',
+  primary: '#F2EDE4',
+  secondary: '#8A8076',
+  border: '#3A332C',
+  coral: '#B5562B',
+  iconInactive: '#5A5349',
+  background: '#1C1817',
+  text: '#F2EDE4',
+  textSecondary: '#8A8076',
+  buttonBg: '#F2EDE4',
+  buttonText: '#1C1817',
+};
+
+export function getColors(isDark) {
+  return isDark ? darkColors : colors;
+}
